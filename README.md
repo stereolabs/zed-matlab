@@ -11,7 +11,7 @@ This sample displays the both left and right images of the ZED as well as the no
 This sample also retrieve the depth information and then compute thru Matlab the depth histogram.
 
 ##Build the program
-To get more detailed instructions (especially for Windows) check out our blog.
+To get more detailed instructions (especially for Windows) check out our [blog](https://www.stereolabs.com/blog/index.php/2015/09/11/how-to-use-the-zed-sdk-with-matlab/).
 
 Open a terminal in zed-matlab directory and execute the following command:
 
