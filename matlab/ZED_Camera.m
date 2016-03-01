@@ -60,7 +60,7 @@ if(strcmp(result,'SUCCESS'))
         subplot(2,2,4)
 
         % Compute the depth histogram
-        val_ = find(depth(:) &gt; 0); % valid depth is above 0
+        val_ = find(depth(:) > 0); % valid depth is above 0
         depth_v = depth(val_);
         [bincounts] = histc(depth_v(:),binranges);
         bar(binranges,bincounts,'histc')
