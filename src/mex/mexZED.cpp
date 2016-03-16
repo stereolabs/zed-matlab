@@ -74,16 +74,6 @@ mxArray* floatmat_to_mat(cv::Mat &matrix) {
     return pArrOut;
 }
 
-template<class InputIterator, class OutputIterator>
-OutputIterator copyMat(InputIterator first, InputIterator last, OutputIterator result)
-{
-	while (first != last) {
-		*result = *first;
-		++result; ++first;
-	}
-	return result;
-}
-
 // Interop. OpenCV-Matlab matrix type (rgb)
 template<int DEPTH>
 mxArray* rgbimage_to_mat(cv::Mat &image) {
@@ -105,7 +95,7 @@ mxArray* rgbimage_to_mat(cv::Mat &image) {
     pix_iter_rgb<T> it_src2(static_cast<T*> (pBeg), size.width, size.height, pitch);
     it_src2.end();
     mxArray_iter_3d<T> it_dest(static_cast<T*> (pBegOut), size.width, size.height, ndim);
-	copyMat(it_src1, it_src2, it_dest);
+	fctCopy(it_src1, it_src2, it_dest);
     return pArrOut;
 }
 
