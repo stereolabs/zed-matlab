@@ -44,6 +44,16 @@ const char *fieldsStruct[] = {"baseline", "left", "right"};
 
 // Interop. OpenCV-Matlab matrix type (float)
 
+template<class InputIterator, class OutputIterator>
+OutputIterator fctCopy(InputIterator first, InputIterator last, OutputIterator result)
+{
+	while (first != last) {
+		*result = *first;
+		++result; ++first;
+	}
+	return result;
+}
+
 template<int TYPE>
 mxArray* floatmat_to_mat(cv::Mat &matrix) {
     void* pBeg = matrix.data;
@@ -59,7 +69,7 @@ mxArray* floatmat_to_mat(cv::Mat &matrix) {
     it_src2.end();
     pix_iterator_2d<T, eColWise> it_dest(static_cast<T*> (pBegOut), size.width, size.height);
 
-    std::copy(it_src1, it_src2, it_dest);
+	fctCopy(it_src1, it_src2, it_dest);
 
     return pArrOut;
 }
