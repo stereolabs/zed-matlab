@@ -111,6 +111,34 @@ mxArray* CvMat_to_new_mxArr(cv::Mat &matrix) {
     return mxCreateDoubleMatrix(0, 0, mxREAL);
 }
 
+sl::zed::MODE exctractMode(char *_str){
+	sl::zed::MODE computeMode = sl::zed::MODE::PERFORMANCE;
+	if (!strcmp(_str, "PERFORMANCE"))
+			computeMode = sl::zed::MODE::PERFORMANCE;
+	else if (!strcmp(_str, "MEDIUM"))
+			computeMode = sl::zed::MODE::MEDIUM;
+	else if (!strcmp(_str, "QUALITY"))
+			computeMode = sl::zed::MODE::QUALITY;
+		else
+			mexPrintf("unknown mode, 'PERFORMANCE' used\n");	
+	return computeMode;
+}
+
+sl::zed::UNIT exctractUnit(char *_str){
+	sl::zed::UNIT unit = sl::zed::UNIT::METER;
+	if (!strcmp(_str, "MILLIMETER"))
+		unit = sl::zed::UNIT::MILLIMETER;
+	else if (!strcmp(_str, "METER"))
+		unit = sl::zed::UNIT::METER;
+	else if (!strcmp(_str, "INCH"))
+		unit = sl::zed::UNIT::INCH;
+	else if (!strcmp(_str, "FOOT"))
+		unit = sl::zed::UNIT::FOOT;
+	else
+		mexPrintf("unknown UNIT -> 'METER' used\n");
+	return unit;
+}
+
 /* MEX entry function */
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
@@ -118,70 +146,85 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     char command[128];
     mxGetString(prhs[0], command, 128);
 
-    // init function, creation of the ZED, in live or playback mode
-    if (!strcmp(command, "init")) {
-        if (nrhs > 3)
-            mexErrMsgTxt(" Initialisation required at least one argument (svo or resolution) and can handle a second ('performance' or 'quality') as computation mode.");
-
-        // is the first param. is a character this represent a string containing a SVO file
-        if (mxIsChar(prhs[1])) {
-            char svo_path[128];
-            mxGetString(prhs[1], svo_path, 128);
-            mexPrintf("opening svo : %s\n", svo_path);
+    // creation of the ZED, in live or playback mode
+	if (!strcmp(command, "create")) {
+		// is the first param. is a character this represent a string containing a SVO file
+		if (mxIsChar(prhs[1])) {
+			char svo_path[128];
+			mxGetString(prhs[1], svo_path, 128);
+			mexPrintf("opening svo : %s\n", svo_path);
 			zedCam = new sl::zed::Camera(svo_path);
-        } else { // else it should be a resolution for live 
-            double *ptr_ = mxGetPr(prhs[1]);
-            int reso = ptr_[0];
-            mexPrintf("capture live at resolution %dp\n", reso);
-            sl::zed::ZEDResolution_mode resolution;
+		}
+		else { // else it should be a resolution for live 
+			double *ptr_ = mxGetPr(prhs[1]);
+			int reso = ptr_[0];
+			mexPrintf("capture live at resolution %dp\n", reso);
+			sl::zed::ZEDResolution_mode resolution;
 
-            switch (reso) {
-                case 480:
-                    resolution = sl::zed::VGA;
-                    break;
-                case 720:
-                    resolution = sl::zed::HD720;
-                    break;
-                case 1080:
-                    resolution = sl::zed::HD1080;
-                    break;
-                case 1242:
-                    resolution = sl::zed::HD2K;
-                    break;
-                default:
-                    mexPrintf("unknown resolution, 1080p used\n");
-                    resolution = sl::zed::HD1080;
-                    break;
-			}		
-			zedCam = new sl::zed::Camera(resolution);
-        }
+			switch (reso) {
+			case 376:
+				resolution = sl::zed::VGA;
+				break;
+			case 720:
+				resolution = sl::zed::HD720;
+				break;
+			case 1080:
+				resolution = sl::zed::HD1080;
+				break;
+			case 1242:
+				resolution = sl::zed::HD2K;
+				break;
+			default:
+				mexPrintf("unknown resolution, 1080p used\n");
+				resolution = sl::zed::HD1080;
+				break;
+			}
+			int fps = 0;
+			if (nrhs == 3){
+				ptr_ = mxGetPr(prhs[2]);
+				fps = ptr_[0];
+				mexPrintf("capture live at %dFPS\n", fps);
+			}
+			zedCam = new sl::zed::Camera(resolution, fps);
+		}
+	}
 
+	//initialisation 
+    if (!strcmp(command, "init")) {				
 		if (zedCam) {
-            // isfthere is no more param. the PERFORMANCE mode is apply, else it can be specified, "performance" / "quality"            
-			sl::zed::MODE computeMode;
-            if (nrhs == 3) {
-                char mode[64];
-                mxGetString(prhs[2], mode, 64);
-                if (!strcmp(mode, "performance"))
-					computeMode = sl::zed::MODE::PERFORMANCE;
-                else if (!strcmp(mode, "quality"))
-					computeMode = sl::zed::MODE::QUALITY;
-				else{
-					mexPrintf("unknown mode, 'performance' used\n");
-					computeMode = sl::zed::MODE::PERFORMANCE;
+			sl::zed::InitParams params; 
+			params.mode = sl::zed::MODE::MEDIUM;
+			params.unit = sl::zed::UNIT::METER;
+			params.verbose = true;
+
+			// check if we have ONE argument
+			if (nrhs == 2){
+				// check if we have a parameter structure
+				if (mxIsStruct(prhs[1])){
+					// for all fields of parameter structure overwrite parameters
+					for (int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
+						const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
+						//mexPrintf("field %d : %s ", i, field_name);
+						mxArray    *field_val = mxGetFieldByNumber(prhs[1], 0, i);						
+						int val = *((double*)mxGetPr(field_val));
+						//mexPrintf(" val %d  \n", val);
+						if (!strcmp(field_name, "mode"))										params.mode = static_cast<sl::zed::MODE>(val);
+						if (!strcmp(field_name, "unit"))											params.unit = static_cast<sl::zed::UNIT>(val);
+						if (!strcmp(field_name, "coordinate"))								params.coordinate = static_cast<sl::zed::COORDINATE_SYSTEM>(val);
+						if (!strcmp(field_name, "verbose"))									params.verbose = val;
+						if (!strcmp(field_name, "device"))										params.device = val;
+						if (!strcmp(field_name, "minimumDistance"))                params.minimumDistance = val;
+						if (!strcmp(field_name, "disableSelfCalib"))					params.disableSelfCalib = val;
+						if (!strcmp(field_name, "vflip"))											params.vflip = val;						
+					}
 				}
 			}
-			else{
-				mexPrintf("default mode 'performance' used\n");
-				computeMode = sl::zed::MODE::PERFORMANCE;
-			}
-
-			sl::zed::ERRCODE err = zedCam->init(computeMode, 0, true);
-            // we return the string associated with the error
-            plhs[0] = mxCreateString(sl::zed::errcode2str(err).c_str());
-        } else
-            plhs[0] = mxCreateString("error");
-    }
+			sl::zed::ERRCODE err = zedCam->init(params);
+			// we return the string associated with the error
+			plhs[0] = mxCreateString(sl::zed::errcode2str(err).c_str());
+		} else
+			plhs[0] = mxCreateString("error");
+	}
 
     // get image size function
     if (!strcmp(command, "getImageSize")) {
@@ -201,10 +244,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             if (nrhs == 2) {
                 char mode[64];
                 mxGetString(prhs[1], mode, 64);
-                if (!strcmp(mode, "full"))
-					zedCam->grab(sl::zed::SENSING_MODE::FULL);
-                else if (!strcmp(mode, "raw"))
-					zedCam->grab(sl::zed::SENSING_MODE::RAW);
+                if (!strcmp(mode, "FILL"))
+					zedCam->grab(sl::zed::SENSING_MODE::FILL);
+                else if (!strcmp(mode, "STANDARD"))
+					zedCam->grab(sl::zed::SENSING_MODE::STANDARD);
                 else
                     mexErrMsgTxt("wrong sensing mode");
             } else {
@@ -340,6 +383,35 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
+
+	// set the depth clamp value
+	if (!strcmp(command, "enableTracking")) {
+		if (zedCam) {
+			Eigen::Matrix4f pathInit;
+			pathInit.setIdentity(4, 4);
+			zedCam->enableTracking(pathInit);
+		}
+		else
+			mexErrMsgTxt("ZED is not initialized");
+	}
+	
+	if (!strcmp(command, "getPosition")) {
+		if (zedCam) {
+			cv::Mat position(4,4, CV_32FC1);
+			Eigen::Matrix4f path;
+			zedCam->getPosition(path);
+
+			for (int i = 0; i < 4; i++){
+				for (int j = 0; j < 4; j++){
+					position.at<float>(i, j) = path(i, j);
+				}
+			}
+
+			plhs[0] = CvMat_to_new_mxArr(position);
+		}
+		else
+			mexErrMsgTxt("ZED is not initialized");
+	}
 
 	// set the depth clamp value
 	if (!strcmp(command, "delete")) {

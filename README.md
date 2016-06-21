@@ -9,9 +9,10 @@ It demonstrates how to use most of the ZED SDK functionalities with Matlab.
 
 This sample displays the both left and right images of the ZED as well as the normalized depth map.
 This sample also retrieve the depth information and then compute thru Matlab the depth histogram.
+Since we added tracking skills to the SDK, the position of the ZED camera is also displayed.
 
-##Build the program
-To get more detailed instructions (especially for Windows) check out our [blog](https://www.stereolabs.com/blog/index.php/2015/09/11/how-to-use-the-zed-sdk-with-matlab/).
+## Build the program
+To get more detailed instructions (especially for Windows) check out the  [documentation](https://www.stereolabs.com/blog/index.php/2015/09/11/how-to-use-the-zed-sdk-with-matlab/).
 
 Open a terminal in zed-matlab directory and execute the following command:
 
@@ -29,3 +30,5 @@ In the matlab directory, open the file ZED_Camera.m with Matlab and press run.
 
 **Quit :**
 Press any key to exit the program.
+
+![](main.png)
