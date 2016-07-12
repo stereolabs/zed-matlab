@@ -309,10 +309,21 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             else if (!strcmp(measure, "depth"))
 				measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::DEPTH));
             else if (!strcmp(measure, "confidence"))
-				measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE));
+                measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE));
+            else if (!strcmp(measure, "XYZ"))
+                measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::XYZ));
             else
                 mexErrMsgTxt("wrong measure");
-            plhs[0] = CvMat_to_new_mxArr(measure_mat);
+
+            if (strcmp(measure, "XYZ"))
+                plhs[0] = CvMat_to_new_mxArr(measure_mat);
+            else{
+                std::vector<cv::Mat> mat_v;
+                cv::split(measure_mat, mat_v);
+                plhs[0] = CvMat_to_new_mxArr(mat_v[0]);
+                plhs[1] = CvMat_to_new_mxArr(mat_v[1]);
+                plhs[2] = CvMat_to_new_mxArr(mat_v[2]);
+            }
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
