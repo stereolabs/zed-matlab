@@ -27,6 +27,11 @@ Open a terminal in zed-matlab directory and execute the following command:
 ## Run the program
 In the matlab directory, open the file ZED_Camera.m with Matlab and press run.
 
+**Quit :**
+Press any key to exit the program.
+
+![](main.png)
+
 ### Troubleshooting
 
 On Linux, If you get the following error :
@@ -45,7 +50,3 @@ Then you can launch it normally, just by typing
 
     matlab
 
-**Quit :**
-Press any key to exit the program.
-
-![](main.png)
