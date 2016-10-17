@@ -24,8 +24,14 @@
 // ZED
 #include <zed/Camera.hpp>
 
+//CUDA includes
+#include <cuda.h>
+#include <cuda_runtime_api.h>
+#include <npp.h>
+
 // global var.
 static sl::zed::Camera *zedCam = NULL;
+sl::zed::Mat cloudCPU;
 
 // C++ struct
 
@@ -222,6 +228,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			sl::zed::ERRCODE err = zedCam->init(params);
 			// we return the string associated with the error
 			plhs[0] = mxCreateString(sl::zed::errcode2str(err).c_str());
+			cloudCPU.allocate_cpu(zedCam->getImageSize().width, zedCam->getImageSize().height, 4, sl::zed::DATA_TYPE::FLOAT);
 		} else
 			plhs[0] = mxCreateString("error");
 	}
@@ -310,8 +317,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 				measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::DEPTH));
             else if (!strcmp(measure, "confidence"))
                 measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE));
-            else if (!strcmp(measure, "XYZ"))
-                measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::XYZ));
+            else if (!strcmp(measure, "XYZ")){
+                sl::zed::Mat cloud = zedCam->retrieveMeasure_gpu(sl::zed::MEASURE::XYZ);
+                cudaError err = cudaMemcpy2D((uchar*)cloudCPU.data, cloudCPU.step, (Npp32f*)cloud.data, cloud.step, cloud.getWidthByte(), cloud.height, cudaMemcpyDeviceToHost);
+                 measure_mat = slMat2cvMat(cloudCPU);
+            }
             else
                 mexErrMsgTxt("wrong measure");
 
@@ -427,6 +437,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 	// set the depth clamp value
 	if (!strcmp(command, "delete")) {
 		if (zedCam) {
+			cloudCPU.deallocate();
 			delete zedCam;
 			void mexUnlock(void);
 		}
