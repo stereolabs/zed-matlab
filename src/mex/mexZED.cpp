@@ -433,6 +433,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 		else
 			mexErrMsgTxt("ZED is not initialized");
 	}
+	
+    // get current timestamp, return the current timestamp of the camera.
+    if (!strcmp(command, "getCurrentTimestamp")) {
+		if (zedCam) {
+			double timestamp = zedCam->getCurrentTimestamp();
+            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof (double));
+        } else
+            mexErrMsgTxt("ZED is not initialized");
+    }
+	
+    // get camera timestamp, return the timestamp in ns when the frames has been extracted from the camera. To be called after a grab.
+    if (!strcmp(command, "getCameraTimestamp")) {
+		if (zedCam) {
+			double timestamp = zedCam->getCameraTimestamp();
+            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof (double));
+        } else
+            mexErrMsgTxt("ZED is not initialized");
+    }
 
 	// set the depth clamp value
 	if (!strcmp(command, "delete")) {
