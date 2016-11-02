@@ -3,8 +3,8 @@
  **     Using ZED with Matlab   **
  *********************************/
 
- // MEX header
-#include <mex.h> 
+// MEX header
+#include <mex.h>
 #include "matrix.h"
 
 // OpenCV
@@ -49,8 +49,8 @@ struct StereoParams {
     Intra right;
 };
 
-const char *fieldsIntra[] = { "fx", "fy", "cx", "cy" };
-const char *fieldsStruct[] = { "baseline", "left", "right" };
+const char *fieldsIntra[] = {"fx", "fy", "cx", "cy"};
+const char *fieldsStruct[] = {"baseline", "left", "right"};
 
 // Interop. OpenCV-Matlab matrix type (float)
 
@@ -58,7 +58,8 @@ template<class InputIterator, class OutputIterator>
 OutputIterator fctCopy(InputIterator first, InputIterator last, OutputIterator result) {
     while (first != last) {
         *result = *first;
-        ++result; ++first;
+        ++result;
+        ++first;
     }
     return result;
 }
@@ -84,6 +85,7 @@ mxArray* floatmat_to_mat(cv::Mat &matrix) {
 }
 
 // Interop. OpenCV-Matlab matrix type (rgb)
+
 template<int DEPTH>
 mxArray* rgbimage_to_mat(cv::Mat &image) {
     const int ndim = image.channels();
@@ -163,29 +165,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             mxGetString(prhs[1], svo_path, 128);
             mexPrintf("opening svo : %s\n", svo_path);
             zedCam = new sl::zed::Camera(svo_path);
-        } else { // else it should be a resolution for live 
+        } else { // else it should be a resolution for live
             double *ptr_ = mxGetPr(prhs[1]);
             int reso = ptr_[0];
             mexPrintf("capture live at resolution %dp\n", reso);
             sl::zed::ZEDResolution_mode resolution;
 
             switch (reso) {
-            case 376:
-                resolution = sl::zed::VGA;
-                break;
-            case 720:
-                resolution = sl::zed::HD720;
-                break;
-            case 1080:
-                resolution = sl::zed::HD1080;
-                break;
-            case 1242:
-                resolution = sl::zed::HD2K;
-                break;
-            default:
-                mexPrintf("unknown resolution, 1080p used\n");
-                resolution = sl::zed::HD1080;
-                break;
+                case 376:
+                    resolution = sl::zed::VGA;
+                    break;
+                case 720:
+                    resolution = sl::zed::HD720;
+                    break;
+                case 1080:
+                    resolution = sl::zed::HD1080;
+                    break;
+                case 1242:
+                    resolution = sl::zed::HD2K;
+                    break;
+                default:
+                    mexPrintf("unknown resolution, 1080p used\n");
+                    resolution = sl::zed::HD1080;
+                    break;
             }
             int fps = 0;
             if (nrhs == 3) {
@@ -197,7 +199,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         }
     }
 
-    //initialisation 
+    //initialisation
     if (!strcmp(command, "init")) {
         if (zedCam) {
             sl::zed::InitParams params;
@@ -213,17 +215,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                     for (int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
                         const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
                         //mexPrintf("field %d : %s ", i, field_name);
-                        mxArray    *field_val = mxGetFieldByNumber(prhs[1], 0, i);
-                        int val = *((double*)mxGetPr(field_val));
+                        mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
+                        int val = *((double*) mxGetPr(field_val));
                         //mexPrintf(" val %d  \n", val);
-                        if (!strcmp(field_name, "mode"))										params.mode = static_cast<sl::zed::MODE>(val);
-                        if (!strcmp(field_name, "unit"))											params.unit = static_cast<sl::zed::UNIT>(val);
-                        if (!strcmp(field_name, "coordinate"))								params.coordinate = static_cast<sl::zed::COORDINATE_SYSTEM>(val);
-                        if (!strcmp(field_name, "verbose"))									params.verbose = val;
-                        if (!strcmp(field_name, "device"))										params.device = val;
-                        if (!strcmp(field_name, "minimumDistance"))                params.minimumDistance = val;
-                        if (!strcmp(field_name, "disableSelfCalib"))					params.disableSelfCalib = val;
-                        if (!strcmp(field_name, "vflip"))											params.vflip = val;
+                        if (!strcmp(field_name, "mode")) params.mode = static_cast<sl::zed::MODE> (val);
+                        if (!strcmp(field_name, "unit")) params.unit = static_cast<sl::zed::UNIT> (val);
+                        if (!strcmp(field_name, "coordinate")) params.coordinate = static_cast<sl::zed::COORDINATE_SYSTEM> (val);
+                        if (!strcmp(field_name, "verbose")) params.verbose = val;
+                        if (!strcmp(field_name, "device")) params.device = val;
+                        if (!strcmp(field_name, "minimumDistance")) params.minimumDistance = val;
+                        if (!strcmp(field_name, "disableSelfCalib")) params.disableSelfCalib = val;
+                        if (!strcmp(field_name, "vflip")) params.vflip = val;
                     }
                 }
             }
@@ -242,7 +244,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             ptr_size[0] = zedCam->getImageSize().width;
             ptr_size[1] = zedCam->getImageSize().height;
             plhs[0] = mxCreateDoubleMatrix(2, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), ptr_size, 2 * sizeof(double));
+            memcpy(mxGetPr(plhs[0]), ptr_size, 2 * sizeof (double));
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
@@ -321,7 +323,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 measure_mat = slMat2cvMat(zedCam->retrieveMeasure(sl::zed::MEASURE::CONFIDENCE));
             else if (!strcmp(measure, "XYZ")) {
                 sl::zed::Mat cloud = zedCam->retrieveMeasure_gpu(sl::zed::MEASURE::XYZ);
-                cudaError err = cudaMemcpy2D((uchar*)cloudCPU.data, cloudCPU.step, (Npp32f*)cloud.data, cloud.step, cloud.getWidthByte(), cloud.height, cudaMemcpyDeviceToHost);
+                cudaError err = cudaMemcpy2D((uchar*) cloudCPU.data, cloudCPU.step, (Npp32f*) cloud.data, cloud.step, cloud.getWidthByte(), cloud.height, cudaMemcpyDeviceToHost);
                 measure_mat = slMat2cvMat(cloudCPU);
             } else
                 mexErrMsgTxt("wrong measure");
@@ -344,7 +346,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if (zedCam) {
             double nbFrame = zedCam->getSVONumberOfFrames();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &nbFrame, 1 * sizeof(double));
+            memcpy(mxGetPr(plhs[0]), &nbFrame, 1 * sizeof (double));
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
@@ -416,6 +418,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             mexErrMsgTxt("ZED is not initialized");
     }
 
+
+    // set the depth clamp value
+    if (!strcmp(command, "enableTracking")) {
+        if (zedCam) {
+            Eigen::Matrix4f pathInit;
+            pathInit.setIdentity(4, 4);
+            zedCam->enableTracking(pathInit);
+        } else
+            mexErrMsgTxt("ZED is not initialized");
+    }
+
     if (!strcmp(command, "getPosition")) {
         if (zedCam) {
             cv::Mat position(4, 4, CV_32FC1);
@@ -438,7 +451,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if (zedCam) {
             double timestamp = zedCam->getCurrentTimestamp();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof(double));
+            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof (double));
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
@@ -448,7 +461,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if (zedCam) {
             double timestamp = zedCam->getCameraTimestamp();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof(double));
+            memcpy(mxGetPr(plhs[0]), &timestamp, 1 * sizeof (double));
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
@@ -462,4 +475,5 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
+
 }
