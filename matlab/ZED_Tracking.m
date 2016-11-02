@@ -18,55 +18,52 @@ param.mode = 2;
 result = mexZED('init', param)
 
 if(strcmp(result,'SUCCESS'))
- 
+    
     %enable Tracking
     mexZED('enableTracking');
     
-    Display2D = 1;
-    
-    %Store tracking informations
+    % for tracking informations storage
     PositionArray = [];
-
+    
     % Create Figure and wait for keyboard interruption to quit
-    f = figure('name','ZED SDK','keypressfcn','close');
+    f = figure('name','ZED SDK : Positional Tracking','NumberTitle','off');
+    %create 2 sub figure
+    ha1 = axes('Position',[0.05,0.7,0.9,0.25]);
+    ha2 = axes('Position',[0.05,0.05,0.9,0.6]);
+    xlabel('Tx (M)');
+    ylabel('Tz (M)');
+    zlabel('Ty (M)');
+    axis equal, grid on;
+    hold on;
+    
+    % init 3d display
+    h = plot3(0,0,0, 'r');
+    
     ok = 1;
     % loop over frames
     while ok
-
+        
         % grab the current image and compute the depth
         mexZED('grab', 'STANDARD')
-
+        
         % retrieve letf image
-        image_l = mexZED('retrieveImage', 'left');    
+        image_l = mexZED('retrieveImage', 'left');
+        %displays it
+        axes(ha1);
+        imshow(image_l);
+        
         % retrieve camera Path
         position = mexZED('getPosition');
+        %stack positions
+        PositionArray = [PositionArray; position(1,4) position(3,4) position(2,4)];
         
-        % display
-        subplot(3,1,1)
-        imshow(image_l);
-        title('Image Left')
-      
-        % Draw 2D/3D ZED position
-        subplot(3,1,2:3)
-        Tx = position(1,4);
-        Ty = position(2,4);
-        Tz = position(3,4);
-        PositionArray = [PositionArray; Tx Ty Tz];
-        if Display2D
-            plot(PositionArray(:,1), PositionArray(:,3),'-b');
-            xlabel('Tx (M)');
-            ylabel('Tz (M)');
-        else
-            plot3(PositionArray(:,1), PositionArray(:,2), PositionArray(:,3), '-r');
-            xlabel('Tx (M)');
-            ylabel('Ty (M)');
-            zlabel('Tz (M)');
-        end
-        grid on;
-        title('Odometry')
-
-         drawnow; %this checks for interrupts
-         ok = ishandle(f); %does the figure still exist
+        axes(ha2);
+        set(h,'XData',PositionArray(:,1))
+        set(h,'YData',PositionArray(:,2))
+        set(h,'ZData',PositionArray(:,3))
+        
+        drawnow; %this checks for interrupts
+        ok = ishandle(f); %does the figure still exist
     end
 end
 

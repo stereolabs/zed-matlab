@@ -18,35 +18,53 @@ param.mode = 2;
 param.coordinate = 2;
 result = mexZED('init', param)
 
+% DepthClamp value
+Depth_max = 5;
+% Step for mesh display
+data_Step = 10;
+
 if(strcmp(result,'SUCCESS'))
-
-    s = mexZED('getImageSize')
-
-    % Get cameras parameters
-    params = mexZED('getCameraParameters')
-
-    mexZED('setDepthClampValue', 5)
-
-    % Create Figure and wait for keyboard interruption to quit
-    f =figure('name','ZED SDK','keypressfcn','close', 'Color',[1 1 1]);
-
-    az = 10;
-    el = 25;
-
+    mexZED('setDepthClampValue', Depth_max)
+    % Create Figure
+    f = figure('name','ZED SDK : Point Cloud','NumberTitle','off');
+    %create 2 sub figure
+    ha1 = axes('Position',[0.05,0.7,0.9,0.25]);
+    ha2 = axes('Position',[0.05,0.05,0.9,0.6]);
+    axis([-Depth_max, Depth_max, 0, Depth_max, -Depth_max ,Depth_max])
+    xlabel('X');
+    ylabel('Z');
+    zlabel('Y');
+    grid on;
+    hold on;
+    
+    % init mesh data
+    size = mexZED('getImageSize')
+    pt_X = zeros(size(1),size(2));
+    pt_Y = zeros(size(1),size(2));
+    pt_Z = zeros(size(1),size(2));
+    h = mesh(pt_X(:,:),  pt_Z(:,:), pt_Y(:,:))
+    
     ok = 1;
     % loop over frames
     while ok
-
         % grab the current image and compute the depth
         mexZED('grab', 'STANDARD')
-
-        % retrieve the point cloud 
-        [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 'XYZ');            
-        mesh(pt_X(:,:),  pt_Z(:,:), pt_Y(:,:))
-        grid on;
-
-        view(az, el);
-
+        
+        % retrieve letf image
+        image_l = mexZED('retrieveImage', 'left');
+        %displays it
+        axes(ha1);
+        imshow(image_l);
+        
+        % retrieve the point cloud
+        [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 'XYZ');
+        
+        %displays it
+        axes(ha2);
+        set(h,'XData',pt_X(1:data_Step:end,1:data_Step:end))
+        set(h,'YData',pt_Z(1:data_Step:end,1:data_Step:end))
+        set(h,'ZData',pt_Y(1:data_Step:end,1:data_Step:end))
+        
         drawnow; %this checks for interrupts
         ok = ishandle(f); %does the figure still exist
     end

@@ -18,40 +18,37 @@ param.mode = 2;
 result = mexZED('init', param)
 
 if(strcmp(result,'SUCCESS'))
-
+    
     size = mexZED('getImageSize')
-
+    
     % Set Confidence Threshold
     mexZED('setConfidenceThreshold', 98);
-
+    
     % Define maximum depth (in METER)
     maxDepth = 10;
     binranges = 0:0.1:maxDepth ;
     mexZED('setDepthClampValue',maxDepth);
-
+    
     % Get number of frames (if SVO)
-    nbFrame = mexZED('getSVONumberOfFrames');
-
+    nbFrame = mexZED('getSVONumberOfFrames')
+    
     % Get cameras parameters
     params = mexZED('getCameraParameters')
- 
-    %Store tracking informations
-    PositionArray = [];
-
+    
     % Create Figure and wait for keyboard interruption to quit
-    f = figure('name','ZED SDK','keypressfcn','close','units','normalized','outerposition',[0 0 1 1]);
+    f = figure('name','ZED SDK : Images and Depth','NumberTitle','off','keypressfcn','close');
     ok = 1;
     % loop over frames
     while ok
-
+        
         % grab the current image and compute the depth
         mexZED('grab', 'STANDARD')
-
+        
         % retrieve letf image
         image_l = mexZED('retrieveImage', 'left');
         % retrieve right image
         image_r = mexZED('retrieveImage', 'right');
-
+        
         % retrieve depth as a normalized image
         depth_im = mexZED('normalizeMeasure', 'depth');
         % retrieve the real depth
@@ -74,6 +71,7 @@ if(strcmp(result,'SUCCESS'))
         [bincounts] = histc(depth_v(:),binranges);
         bar(binranges,bincounts,'histc')
         title('Depth histogram')
+        xlabel('meters')
         
         drawnow; %this checks for interrupts
         ok = ishandle(f); %does the figure still exist

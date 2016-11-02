@@ -14,29 +14,22 @@ find_package(Matlab REQUIRED)
 IF(MATLAB_FOUND)
     message(STATUS "MATLAB Found, MATLAB MEX will be compiled.")
 	
-	IF(WIN32)
-		SET(ZED_INCLUDE_DIRS $ENV{ZED_INCLUDE_DIRS})
-			if (CMAKE_CL_64) # 64 bits
-					SET(ZED_LIBRARIES $ENV{ZED_LIBRARIES_64})
-			else(CMAKE_CL_64) # 32 bits
-					message("32bits compilation is no more available with CUDA7.0")
-			endif(CMAKE_CL_64)
-		SET(ZED_LIBRARY_DIR $ENV{ZED_LIBRARY_DIR})
-		SET(OPENCV_DIR $ENV{OPENCV_DIR})
-		SET(Eigen_INCLUDE_DIRS $ENV{EIGEN_DIR})
-	ELSE()
-		find_package(ZED 1.0 REQUIRED)
-		SET(Eigen_INCLUDE_DIRS "/usr/include/eigen3") ##depends if installed by packet or by own build install
-		SET(Eigen_INCLUDE_DIRS_2 "/usr/local/include/eigen3") ##depends if installed by packet or by own build install
-		include_directories(${Eigen_INCLUDE_DIRS_2}) 
-	ENDIF(WIN32)
+    IF(WIN32)
+        SET(ZED_INCLUDE_DIRS $ENV{ZED_INCLUDE_DIRS})
+        SET(ZED_LIBRARIES $ENV{ZED_LIBRARIES_64})
+        SET(ZED_LIBRARY_DIR $ENV{ZED_LIBRARY_DIR})
+        SET(OPENCV_DIR $ENV{OPENCV_DIR})
+        SET(EIGEN3_INCLUDE_DIR $ENV{EIGEN_DIR})
+    ELSE()
+        find_package(ZED 1.0 REQUIRED)
+        find_package(Eigen3 REQUIRED)
+    ENDIF(WIN32)
 
-	find_package(CUDA 7.5 REQUIRED)
-	find_package(OpenCV 3.1 COMPONENTS core highgui imgproc REQUIRED)
+    find_package(CUDA 8 REQUIRED)
+    find_package(OpenCV 3.1 COMPONENTS core highgui imgproc REQUIRED)
 
-	include_directories(${Eigen_INCLUDE_DIRS})
-
-	INCLUDE_DIRECTORIES(include)
+    include_directories(${EIGEN3_INCLUDE_DIR})
+    include_directories(include)
 
     add_subdirectory(mex)
 ELSE(MATLAB_FOUND)
