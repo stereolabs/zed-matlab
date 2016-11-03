@@ -33,6 +33,8 @@ if(strcmp(result,'SUCCESS'))
     xlabel('Tx (M)');
     ylabel('Tz (M)');
     zlabel('Ty (M)');
+    xlim(ha2, [-2 2]);
+    ylim(ha2, [-2 2]);
     axis equal, grid on;
     hold on;
     
