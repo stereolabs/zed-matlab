@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
 project(MEX)
 
+IF(WIN32 AND NOT CMAKE_GENERATOR MATCHES "[a-z A-Z 0-9]*64" )
+    message(FATAL_ERROR "You've selected the 32bit version of ${CMAKE_GENERATOR}. \n Please delete the cache (file->Delete Cache) and use the 64bit version. (${CMAKE_GENERATOR} Win64)")
+ENDIF()
+
 SET(MATLAB_ROOT $ENV{MATLAB_ROOT} CACHE FILEPATH "directory")
 
 set(CMAKE_INSTALL_PREFIX ${CMAKE_SOURCE_DIR})

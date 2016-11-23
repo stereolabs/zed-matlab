@@ -200,7 +200,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     //initialisation
-    if (!strcmp(command, "init")) {
+    else if (!strcmp(command, "init")) {
         if (zedCam) {
             sl::zed::InitParams params;
             params.mode = sl::zed::MODE::MEDIUM;
@@ -238,7 +238,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // get image size function
-    if (!strcmp(command, "getImageSize")) {
+    else if (!strcmp(command, "getImageSize")) {
         if (zedCam) {
             double ptr_size[2];
             ptr_size[0] = zedCam->getImageSize().width;
@@ -250,7 +250,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // grab function, the SENSING MODE can be given "full"-"raw", by default "full" is used
-    if (!strcmp(command, "grab")) {
+    else if (!strcmp(command, "grab")) {
         if (zedCam) {
             if (nrhs == 2) {
                 char mode[64];
@@ -269,7 +269,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // retrieve image function, the side must be specified : "left" - "right"
-    if (!strcmp(command, "retrieveImage")) {
+    else if (!strcmp(command, "retrieveImage")) {
         if (zedCam) {
             char side[64];
             mxGetString(prhs[1], side, 64);
@@ -288,7 +288,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // retrieve normalized measure image, the measure type must be specified : "disparity" - "depth" - "confidence"
-    if (!strcmp(command, "normalizeMeasure")) {
+    else if (!strcmp(command, "normalizeMeasure")) {
         if (zedCam) {
             char measure[64];
             mxGetString(prhs[1], measure, 64);
@@ -309,7 +309,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // retrieve measure matrix, the measure type must be specified : "disparity" - "depth" - "confidence"
-    if (!strcmp(command, "retrieveMeasure")) {
+    else if (!strcmp(command, "retrieveMeasure")) {
         if (zedCam) {
             char measure[64];
             mxGetString(prhs[1], measure, 64);
@@ -342,7 +342,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // get number of frames, return -1 if the ZED is used in live mode
-    if (!strcmp(command, "getSVONumberOfFrames")) {
+    else if (!strcmp(command, "getSVONumberOfFrames")) {
         if (zedCam) {
             double nbFrame = zedCam->getSVONumberOfFrames();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -352,7 +352,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // set the current frame position
-    if (!strcmp(command, "setSVOPosition")) {
+    else if (!strcmp(command, "setSVOPosition")) {
         if (zedCam) {
             double *ptr_ = mxGetPr(prhs[1]);
             int frame = ptr_[0];
@@ -361,8 +361,18 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             mexErrMsgTxt("ZED is not initialized");
     }
 
+    // get the current frame position
+    else if (!strcmp(command, "getSVOPosition")) {
+        if (zedCam) {
+            double nbFrame = zedCam->getSVOPosition();
+            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+            memcpy(mxGetPr(plhs[0]), &nbFrame, 1 * sizeof (double));
+        } else
+            mexErrMsgTxt("ZED is not initialized");
+    }
+
     // set the confidence threshold
-    if (!strcmp(command, "setConfidenceThreshold")) {
+    else if (!strcmp(command, "setConfidenceThreshold")) {
         if (zedCam) {
             double *ptr_ = mxGetPr(prhs[1]);
             int confidence = ptr_[0];
@@ -372,7 +382,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // set the depth clamp value
-    if (!strcmp(command, "setDepthClampValue")) {
+    else if (!strcmp(command, "setDepthClampValue")) {
         if (zedCam) {
             double *ptr_ = mxGetPr(prhs[1]);
             int depthClamp = ptr_[0];
@@ -382,7 +392,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // get the projection matrix
-    if (!strcmp(command, "getCameraParameters")) {
+    else if (!strcmp(command, "getCameraParameters")) {
         if (zedCam) {
             mxArray *p;
             plhs[0] = mxCreateStructMatrix(1, 1, 3, fieldsStruct);
@@ -409,7 +419,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // set the depth clamp value
-    if (!strcmp(command, "enableTracking")) {
+    else if (!strcmp(command, "enableTracking")) {
         if (zedCam) {
             Eigen::Matrix4f pathInit;
             pathInit.setIdentity(4, 4);
@@ -420,7 +430,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 
     // set the depth clamp value
-    if (!strcmp(command, "enableTracking")) {
+    else if (!strcmp(command, "enableTracking")) {
         if (zedCam) {
             Eigen::Matrix4f pathInit;
             pathInit.setIdentity(4, 4);
@@ -429,7 +439,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             mexErrMsgTxt("ZED is not initialized");
     }
 
-    if (!strcmp(command, "getPosition")) {
+    else if (!strcmp(command, "getPosition")) {
         if (zedCam) {
             cv::Mat position(4, 4, CV_32FC1);
             Eigen::Matrix4f path;
@@ -447,7 +457,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // get current timestamp, return the current timestamp of the camera.
-    if (!strcmp(command, "getCurrentTimestamp")) {
+    else if (!strcmp(command, "getCurrentTimestamp")) {
         if (zedCam) {
             double timestamp = zedCam->getCurrentTimestamp();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -457,7 +467,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // get camera timestamp, return the timestamp in ns when the frames has been extracted from the camera. To be called after a grab.
-    if (!strcmp(command, "getCameraTimestamp")) {
+    else if (!strcmp(command, "getCameraTimestamp")) {
         if (zedCam) {
             double timestamp = zedCam->getCameraTimestamp();
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
@@ -467,7 +477,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     // set the depth clamp value
-    if (!strcmp(command, "delete")) {
+    else if (!strcmp(command, "delete")) {
         if (zedCam) {
             cloudCPU.deallocate();
             delete zedCam;
@@ -475,5 +485,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         } else
             mexErrMsgTxt("ZED is not initialized");
     }
+	
+	else {
+            mexErrMsgTxt("Method unkown");		
+	}
 
 }
