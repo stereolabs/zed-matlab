@@ -3,24 +3,26 @@ disp('=========SL_ZED_WITH_MATLAB -- Tracking=========');
 close all;
 clear mex; clear functions; clear all;
 
-% SVO playback
-% path = '../MySVO.svo';
-% mexZED('create', path)
+mexZED('create');
 
-% Live mode
-mexZED('create', 720, 60);
-
-% parameter struct, the same as sl::zed::InitParams
-% values as enum number, defines in : include/zed/utils/GlobalDefine.hpp
+% parameter struct, the same as sl::InitParameters
+% values as enum number, defines in : sl/GlobalDefine.hpp 
+% or from https://www.stereolabs.com/developers/documentation/API/
 % 1: true, 0: false for boolean
-param.unit = 1; % in this sample we use METER
-param.mode = 2;
-result = mexZED('init', param)
 
-if(strcmp(result,'SUCCESS'))
+InitParameters.camera_resolution = 2; %HD720
+InitParameters.camera_fps = 60;
+InitParameters.system_units = 2; %METER
+InitParameters.depth_mode = 1; %PERFORMANCE
+%param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
+result = mexZED('open', InitParameters)
+
+if(strcmp(result,'Error code:  Success'))
     
     %enable Tracking
-    mexZED('enableTracking');
+    TrackingParameters.enable_spatial_memory = 1;
+    %TrackingParameters.initial_world_transform = [1,0,0,0;0,1,0,0;0,0,1,0;0,0,0,1];
+    mexZED('enableTracking', TrackingParameters);
     
     % for tracking informations storage
     PositionArray = [];
@@ -36,8 +38,7 @@ if(strcmp(result,'SUCCESS'))
     xlim(ha2, [-2 2]);
     ylim(ha2, [-2 2]);
     axis equal, grid on;
-    hold on;
-    
+    hold on;   
     % init 3d display
     h = plot3(0,0,0, 'r');
     
@@ -46,13 +47,16 @@ if(strcmp(result,'SUCCESS'))
     while ok
         
         % grab the current image and compute the depth
-        mexZED('grab', 'STANDARD')
+        RuntimeParameters.sensing_mode = 0; %STANDARD
+        RuntimeParameters.enable_depth = 1;
+        RuntimeParameters.enable_point_cloud = 0;
+        mexZED('grab', RuntimeParameters)
         
         % retrieve letf image
-        image_l = mexZED('retrieveImage', 'left');
+        image_left = mexZED('retrieveImage', 0); %left
         %displays it
         axes(ha1);
-        imshow(image_l);
+        imshow(image_left);
         
         % retrieve camera Path
         position = mexZED('getPosition');
@@ -70,4 +74,4 @@ if(strcmp(result,'SUCCESS'))
 end
 
 % Make sure to call this function to free the memory before use this again
-mexZED('delete')
+mexZED('close')
