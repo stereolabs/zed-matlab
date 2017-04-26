@@ -172,7 +172,9 @@ bool checkParams(int params, int required) {
 		std::string error = "Invalid parameter number, " + std::to_string(required) + " required, " + std::to_string(params-1) + " given.";
 		mexErrMsgTxt(error.c_str());
 		deleteOnFail();
+        return false;
 	}
+    return true;
 }
 
 void notAvailable() {
