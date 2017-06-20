@@ -1,4 +1,3 @@
-
 /*********************************
  **     Using ZED with Matlab   **
  *********************************/
@@ -435,21 +434,24 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 			mxGetString(prhs[1], settingName, 64);
 			double *ptr_ = mxGetPr(prhs[2]);
 			int val = ptr_[0];
+			bool useDefault = false;
+			if (val == -1)
+				useDefault = true;
 
 			if (!strcmp(settingName, "brightness"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_BRIGHTNESS, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_BRIGHTNESS, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "contrast"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_CONTRAST, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_CONTRAST, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "hue"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_HUE, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_HUE, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "saturation"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_SATURATION, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_SATURATION, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "gain"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_GAIN, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_GAIN, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "exposure"))
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_EXPOSURE, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_EXPOSURE, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			else if (!strcmp(settingName, "whitebalance")) {
-				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_WHITEBALANCE, static_cast<sl::CAMERA_SETTINGS>(val));
+				zedCam->setCameraSettings(sl::CAMERA_SETTINGS_WHITEBALANCE, static_cast<sl::CAMERA_SETTINGS>(val), useDefault);
 			}
 			else {
 				mexErrMsgTxt("Unkown CameraSettings");
