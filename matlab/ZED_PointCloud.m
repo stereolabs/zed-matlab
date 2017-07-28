@@ -13,7 +13,8 @@ mexZED('create');
 InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
 InitParameters.system_units = 2; %METER
-InitParameters.depth_mode = 3; %QUALITY
+InitParameters.depth_mode =  1; %PERFORMANCE
+InitParameters.coordinate_system = 3; %COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP
 %param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
@@ -37,11 +38,14 @@ if(strcmp(result,'Error code:  Success'))
     hold on;
     
     % init mesh data
-    size = mexZED('getResolution')
-    pt_X = zeros(size(1),size(2));
-    pt_Y = zeros(size(1),size(2));
-    pt_Z = zeros(size(1),size(2));
-    h = mesh(pt_X(:,:),  pt_Z(:,:), pt_Y(:,:));
+    image_size = mexZED('getResolution')    
+    requested_mesh_size = [128 72];
+    pt_X = zeros(requested_mesh_size);
+    pt_Y = zeros(requested_mesh_size);
+    pt_Z = zeros(requested_mesh_size);
+    
+    nb_elem = requested_mesh_size(1) * requested_mesh_size(2);
+    h = plot3(reshape(pt_X, 1,nb_elem), reshape( pt_Y, 1,nb_elem), reshape( pt_Z, 1,nb_elem), '.');
     
     ok = 1;
     % loop over frames
@@ -58,15 +62,15 @@ if(strcmp(result,'Error code:  Success'))
         axes(ha1);
         imshow(image_left);
         
-        % retrieve the point cloud
-        [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3); %XYZ pointcloud
-        
+        % retrieve the point cloud, resized
+        [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3, requested_mesh_size(1), requested_mesh_size(2)); %XYZ pointcloud
+                
         %displays it
-        axes(ha2);
-        set(h,'XData',pt_X(1:data_Step:end,1:data_Step:end))
-        set(h,'YData',pt_Z(1:data_Step:end,1:data_Step:end))
-        set(h,'ZData',-pt_Y(1:data_Step:end,1:data_Step:end))
-        
+        axes(ha2);        
+        set(h,'XData',reshape(pt_X, 1,nb_elem))
+        set(h,'YData',reshape(pt_Y, 1,nb_elem))
+        set(h,'ZData',reshape(pt_Z, 1,nb_elem))
+               
         drawnow; %this checks for interrupts
         ok = ishandle(f); %does the figure still exist
     end
@@ -74,3 +78,4 @@ end
 
 % Make sure to call this function to free the memory before use this again
 mexZED('close')
+clear mex;

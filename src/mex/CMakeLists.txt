@@ -16,10 +16,10 @@ add_library(${CPP_FILE} SHARED ${CPP_FILE_NAME} ${CMAKE_SOURCE_DIR}/Matlabdef.de
 add_definitions(-std=c++0x)
 
 target_link_libraries(${CPP_FILE}
-			${MATLAB_LIBRARIES}
-			${ZED_LIBRARIES}
-                        ${OpenCV_LIBRARIES}
-			${CUDA_LIBRARIES} ${CUDA_nppi_LIBRARY} ${CUDA_npps_LIBRARY})
+					${MATLAB_LIBRARIES}
+					${ZED_LIBRARIES}
+					${OpenCV_LIBRARIES}
+					${CUDA_LIBRARIES} ${CUDA_nppi_LIBRARY} ${CUDA_npps_LIBRARY})
 
 if(WIN32)
     SET_TARGET_PROPERTIES(${CPP_FILE} PROPERTIES SUFFIX .mexw64)

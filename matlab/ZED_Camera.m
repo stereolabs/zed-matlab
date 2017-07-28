@@ -13,13 +13,14 @@ mexZED('create');
 InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
 InitParameters.system_units = 2; %METER
-InitParameters.depth_mode = 3; %QUALITY
+InitParameters.depth_mode = 1; %PERFORMANCE
 %param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
 if(strcmp(result,'Error code:  Success'))
     
-    size = mexZED('getResolution')
+    image_size = mexZED('getResolution')    
+    requested_depth_size = [720 404];
     
     % Set Confidence Threshold
     mexZED('setConfidenceThreshold', 98);
@@ -38,8 +39,7 @@ if(strcmp(result,'Error code:  Success'))
     f = figure('name','ZED SDK : Images and Depth','NumberTitle','off','keypressfcn','close');
     ok = 1;
     % loop over frames
-    while ok
-        
+    while ok        
         % grab the current image and compute the depth
         RuntimeParameters.sensing_mode = 0; %STANDARD
         RuntimeParameters.enable_depth = 1;
@@ -53,8 +53,8 @@ if(strcmp(result,'Error code:  Success'))
         
         % retrieve depth as a normalized image
         image_depth = mexZED('retrieveImage', 9); %depth
-        % retrieve the real depth
-        depth = mexZED('retrieveMeasure', 1); %depth
+        % retrieve the real depth, resized
+        depth = mexZED('retrieveMeasure', 1, requested_depth_size(1), requested_depth_size(2)); %depth
         
         % display
         subplot(2,2,1)
@@ -82,3 +82,4 @@ end
 
 % Make sure to call this function to free the memory before use this again
 mexZED('close')
+clear mex;
