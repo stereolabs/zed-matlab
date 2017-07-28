@@ -11,7 +11,7 @@ This sample shows how to use the ZED SDK functionalities  within Matlab.
 
 - Windows 7 64bits or later, Ubuntu 16.04
 - Matlab with MEX compiler installed
-- [ZED SDK](https://www.stereolabs.com/developers/) and its dependencies ([CUDA](https://developer.nvidia.com/cuda-downloads), [OpenCV 3.1](http://opencv.org/downloads.html))
+- [ZED SDK](https://www.stereolabs.com/developers/) and its dependencies ([CUDA](https://developer.nvidia.com/cuda-downloads))
 
 
 ## Build the program
