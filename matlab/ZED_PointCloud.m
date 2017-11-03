@@ -23,7 +23,7 @@ depth_max = 5;
 % Step for mesh display
 data_Step = 10;
 
-if(strcmp(result,'Error code:  Success'))
+if(strcmp(result,'Success'))
     mexZED('setDepthMaxRangeValue', depth_max)
     % Create Figure
     f = figure('name','ZED SDK : Point Cloud','NumberTitle','off');

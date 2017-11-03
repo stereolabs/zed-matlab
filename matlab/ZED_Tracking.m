@@ -18,7 +18,7 @@ InitParameters.coordinate_system = 3; %COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP
 %param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
-if(strcmp(result,'Error code:  Success'))
+if(strcmp(result,'Success'))
     
     %enable Tracking
     TrackingParameters.enable_spatial_memory = 1;

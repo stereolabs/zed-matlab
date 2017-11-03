@@ -17,7 +17,7 @@ InitParameters.depth_mode = 1; %PERFORMANCE
 %param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
-if(strcmp(result,'Error code:  Success'))
+if(strcmp(result,'Success'))
     
     image_size = mexZED('getResolution')    
     requested_depth_size = [720 404];

@@ -736,8 +736,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                             val = *((double*) mxGetPr(field_val));
                         //mexPrintf(" val %d  \n", val);
                         if (!strcmp(field_name, "area_file_path")) mapParams.max_memory_usage = val;
-                        if (!strcmp(field_name, "range_meter_max")) mapParams.range_meter.second = val;
-                        if (!strcmp(field_name, "range_meter_min")) mapParams.range_meter.first = val;
+                        if (!strcmp(field_name, "range_meter")) mapParams.range_meter = val;
                         if (!strcmp(field_name, "resolution_meter")) mapParams.resolution_meter = val;
                         if (!strcmp(field_name, "save_texture")) mapParams.save_texture = val;
                     }
