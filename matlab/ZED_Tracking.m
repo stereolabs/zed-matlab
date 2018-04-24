@@ -6,7 +6,7 @@ clear mex; clear functions; clear all;
 mexZED('create');
 
 % parameter struct, the same as sl::InitParameters
-% values as enum number, defines in : sl/GlobalDefine.hpp 
+% values as enum number, defines in : sl/defines.hpp 
 % or from https://www.stereolabs.com/developers/documentation/API/
 % 1: true, 0: false for boolean
 
@@ -15,10 +15,10 @@ InitParameters.camera_fps = 60;
 InitParameters.system_units = 2; %METER
 InitParameters.depth_mode = 1; %PERFORMANCE
 InitParameters.coordinate_system = 3; %COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP
-%param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
+%param.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
-if(strcmp(result,'Success'))
+if(strcmp(result,'SUCCESS'))
     
     %enable Tracking
     TrackingParameters.enable_spatial_memory = 1;
@@ -63,6 +63,9 @@ if(strcmp(result,'Success'))
         position = mexZED('getPosition');
         %stack positions
         PositionArray = [PositionArray; position(1,4) position(2,4) position(3,4)];
+        
+        % retrieve IMU Data
+        IMUdata = mexZED('getIMUData');
         
         axes(ha2);
         set(h,'XData',PositionArray(:,1))

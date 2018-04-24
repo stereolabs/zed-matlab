@@ -6,7 +6,7 @@ clear mex; clear functions; clear all;
 mexZED('create');
 
 % parameter struct, the same as sl::InitParameters
-% values as enum number, defines in : sl/GlobalDefine.hpp
+% values as enum number, defines in : sl/defines.hpp
 % or from https://www.stereolabs.com/developers/documentation/API/
 % 1: true, 0: false for boolean
 
@@ -14,10 +14,10 @@ InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
 InitParameters.system_units = 2; %METER
 InitParameters.depth_mode = 1; %PERFORMANCE
-%param.svo_filename = '../mySVOfile.svo'; % Enable SVO playback
+%param.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
-if(strcmp(result,'Success'))
+if(strcmp(result,'SUCCESS'))
     
     image_size = mexZED('getResolution')    
     requested_depth_size = [720 404];
@@ -37,13 +37,16 @@ if(strcmp(result,'Success'))
     
     % Create Figure and wait for keyboard interruption to quit
     f = figure('name','ZED SDK : Images and Depth','NumberTitle','off','keypressfcn','close');
+        
+    % Setup runtime parameters
+    RuntimeParameters.sensing_mode = 0; % STANDARD sensing mode
+    RuntimeParameters.enable_depth = 1;
+    RuntimeParameters.enable_point_cloud = 0;
+    
     ok = 1;
     % loop over frames
     while ok        
         % grab the current image and compute the depth
-        RuntimeParameters.sensing_mode = 0; %STANDARD
-        RuntimeParameters.enable_depth = 1;
-        RuntimeParameters.enable_point_cloud = 0;
         mexZED('grab', RuntimeParameters)
         
         % retrieve letf image
