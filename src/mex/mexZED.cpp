@@ -237,7 +237,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                         if(!strcmp(field_name, "depth_minimum_distance")) initParams.depth_minimum_distance = val;
                         if(!strcmp(field_name, "camera_disable_self_calib")) initParams.camera_disable_self_calib = val;
                         if(!strcmp(field_name, "camera_image_flip")) initParams.camera_image_flip = val;
-                        if(!strcmp(field_name, "svo_filename")) initParams.svo_input_filename = string_val;
+                        if(!strcmp(field_name, "svo_input_filename")) initParams.svo_input_filename = string_val;
                         if(!strcmp(field_name, "camera_resolution")) initParams.camera_resolution = static_cast<sl::RESOLUTION> (val);
                         if(!strcmp(field_name, "camera_fps")) initParams.camera_fps = val;
                         if(!strcmp(field_name, "svo_real_time_mode")) initParams.svo_real_time_mode = val;

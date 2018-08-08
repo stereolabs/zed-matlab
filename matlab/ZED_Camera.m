@@ -14,7 +14,7 @@ InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
 InitParameters.system_units = 2; %METER
 InitParameters.depth_mode = 1; %PERFORMANCE
-%param.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
+%InitParameters.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
 result = mexZED('open', InitParameters)
 
 if(strcmp(result,'SUCCESS'))
