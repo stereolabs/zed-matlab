@@ -860,7 +860,54 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
             memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
         }
-    } else {
+    }
+
+    else if (!strcmp(command, "savePointCloudAs")) {
+        if (checkParams(nrhs, 2) || checkParams(nrhs, 3)) {
+            double *ptr_ = mxGetPr(prhs[1]);
+            int format = ptr_[0];
+
+            char save_path[128];
+            if (mxIsChar(prhs[2])) {
+                mxGetString(prhs[2], save_path, 128);
+            }
+
+            int color = 0;
+            if (checkParams(nrhs, 3)) {
+                double *ptr1_ = mxGetPr(prhs[3]);
+                color = ptr1_[0];
+            }
+                
+            double val = sl::savePointCloudAs(*zedCam, static_cast<sl::POINT_CLOUD_FORMAT>(format), save_path, color);
+            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+            memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
+        }
+    }
+
+    else if (!strcmp(command, "saveDepthAs")) {
+        if (checkParams(nrhs, 2) || checkParams(nrhs, 3)) {
+            double *ptr_ = mxGetPr(prhs[1]);
+            int format = ptr_[0];
+
+            char save_path[128];
+            if (mxIsChar(prhs[2])) {
+                mxGetString(prhs[2], save_path, 128);
+            }
+
+            int color = 0;
+            if (checkParams(nrhs, 3)) {
+                double *ptr1_ = mxGetPr(prhs[3]);
+                color = ptr1_[0];
+            }
+
+            double val = sl::saveDepthAs(*zedCam, static_cast<sl::DEPTH_FORMAT>(format), save_path, color);
+            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+            memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
+        }
+    }
+    
+    
+    else {
         mexErrMsgTxt("Can't find the specified function");
         deleteOnFail();
     }
