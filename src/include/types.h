@@ -173,10 +173,7 @@ struct mc_traits<mxCHAR_CLASS> {
     typedef wchar_t CT;
 };
 
-
-//#ifdef HAS_OPENCV
-
-//#include <cxtypes.h>
+#include <opencv2/core/types_c.h>
 /*
  * Bi-directional mapping between openCV and Matlab class id
  */
@@ -291,7 +288,5 @@ struct mcv_traits<mxLOGICAL_CLASS> {
     static const int CV_DEPTH = IPL_DEPTH_8U;
     static const int CV_TYPE = CV_8UC1;
 };
-
-//#endif // HAS_OPENCV
 
 #endif // types_h__

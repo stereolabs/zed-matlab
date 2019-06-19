@@ -333,7 +333,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             cv::Mat cv_tmp = cv::Mat(tmp.getHeight(), tmp.getWidth(), cv_type, tmp.getPtr<sl::uchar1>());
 
             if(cv_type == CV_8UC4)
-                cv::cvtColor(cv_tmp, image_rgb, CV_RGBA2RGB);
+                cv::cvtColor(cv_tmp, image_rgb, cv::COLOR_RGBA2RGB);
             plhs[0] = CvMat_to_new_mxArr(image_rgb);
         }
     }
