@@ -241,7 +241,6 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                         if(!strcmp(field_name, "camera_resolution")) initParams.camera_resolution = static_cast<sl::RESOLUTION> (val);
                         if(!strcmp(field_name, "camera_fps")) initParams.camera_fps = val;
                         if(!strcmp(field_name, "svo_real_time_mode")) initParams.svo_real_time_mode = val;
-                        if(!strcmp(field_name, "camera_image_flip")) initParams.camera_image_flip = val;
                         if(!strcmp(field_name, "depth_stabilization")) initParams.depth_stabilization = val;
                         if(!strcmp(field_name, "enable_right_side_measure")) initParams.enable_right_side_measure = val;
                     }
