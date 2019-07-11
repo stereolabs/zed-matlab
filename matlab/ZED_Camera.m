@@ -47,39 +47,40 @@ if(strcmp(result,'SUCCESS'))
     % loop over frames
     while ok        
         % grab the current image and compute the depth
-        mexZED('grab', RuntimeParameters)
-        
-        % retrieve letf image
-        image_left = mexZED('retrieveImage', 0); %left
-        % retrieve right image
-        image_right = mexZED('retrieveImage', 1); %right
-        
-        % retrieve depth as a normalized image
-        image_depth = mexZED('retrieveImage', 9); %depth
-        % retrieve the real depth, resized
-        depth = mexZED('retrieveMeasure', 1, requested_depth_size(1), requested_depth_size(2)); %depth
-        
-        % display
-        subplot(2,2,1)
-        imshow(image_left);
-        title('Image Left')
-        subplot(2,2,2)
-        imshow(image_right);
-        title('Image Right')
-        subplot(2,2,3)
-        imshow(image_depth);
-        title('Depth')
-        subplot(2,2,4)
-        % Compute the depth histogram
-        val_ = find(isfinite(depth(:))); % handle wrong depth values
-        depth_v = depth(val_);
-        [bincounts] = histc(depth_v(:),binranges);
-        bar(binranges,bincounts,'histc')
-        title('Depth histogram')
-        xlabel('meters')
-        
-        drawnow; %this checks for interrupts
-        ok = ishandle(f); %does the figure still exist
+        result = mexZED('grab', RuntimeParameters);        
+        if(strcmp(result,'SUCCESS'))
+            % retrieve letf image
+            image_left = mexZED('retrieveImage', 0); %left
+            % retrieve right image
+            image_right = mexZED('retrieveImage', 1); %right
+
+            % retrieve depth as a normalized image
+            image_depth = mexZED('retrieveImage', 9); %depth
+            % retrieve the real depth, resized
+            depth = mexZED('retrieveMeasure', 1, requested_depth_size(1), requested_depth_size(2)); %depth
+
+            % display
+            subplot(2,2,1)
+            imshow(image_left);
+            title('Image Left')
+            subplot(2,2,2)
+            imshow(image_right);
+            title('Image Right')
+            subplot(2,2,3)
+            imshow(image_depth);
+            title('Depth')
+            subplot(2,2,4)
+            % Compute the depth histogram
+            val_ = find(isfinite(depth(:))); % handle wrong depth values
+            depth_v = depth(val_);
+            [bincounts] = histc(depth_v(:),binranges);
+            bar(binranges,bincounts,'histc')
+            title('Depth histogram')
+            xlabel('meters')
+
+            drawnow; %this checks for interrupts
+            ok = ishandle(f); %does the figure still exist
+        end
     end
 end
 

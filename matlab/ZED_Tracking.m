@@ -45,35 +45,32 @@ if(strcmp(result,'SUCCESS'))
     
     ok = 1;
     % loop over frames
-    while ok
-        
-        % grab the current image and compute the depth
-        RuntimeParameters.sensing_mode = 0; %STANDARD
-        RuntimeParameters.enable_depth = 1;
-        RuntimeParameters.enable_point_cloud = 0;
-        mexZED('grab', RuntimeParameters)
-        
-        % retrieve letf image
-        image_left = mexZED('retrieveImage', 0); %left
-        %displays it
-        axes(ha1);
-        imshow(image_left);
-        
-        % retrieve camera Path
-        position = mexZED('getPosition');
-        %stack positions
-        PositionArray = [PositionArray; position(1,4) position(2,4) position(3,4)];
-        
-        % retrieve IMU Data
-        IMUdata = mexZED('getIMUData');
-        
-        axes(ha2);
-        set(h,'XData',PositionArray(:,1))
-        set(h,'YData',PositionArray(:,2))
-        set(h,'ZData',PositionArray(:,3))
-        
-        drawnow; %this checks for interrupts
-        ok = ishandle(f); %does the figure still exist
+    while ok        
+        % grab the current image and compute the positional tracking
+        result = mexZED('grab');
+        if(strcmp(result,'SUCCESS'))
+            % retrieve letf image
+            image_left = mexZED('retrieveImage', 0); %left
+            %displays it
+            axes(ha1);
+            imshow(image_left);
+
+            % retrieve camera Path
+            position = mexZED('getPosition');
+            %stack positions
+            PositionArray = [PositionArray; position(1,4) position(2,4) position(3,4)];
+
+            % retrieve IMU Data
+            IMUdata = mexZED('getIMUData');
+
+            axes(ha2);
+            set(h,'XData',PositionArray(:,1))
+            set(h,'YData',PositionArray(:,2))
+            set(h,'ZData',PositionArray(:,3))
+
+            drawnow; %this checks for interrupts
+            ok = ishandle(f); %does the figure still exist
+        end
     end
 end
 

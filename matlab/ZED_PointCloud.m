@@ -56,25 +56,26 @@ if(strcmp(result,'SUCCESS'))
     % loop over frames
     while ok
         % grab the current image and compute the depth
-        mexZED('grab', RuntimeParameters)
-        
-        % retrieve letf image
-        image_left = mexZED('retrieveImage', 0); %left
-        %displays it
-        axes(ha1);
-        imshow(image_left);
-        
-        % retrieve the point cloud, resized
-        [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3, requested_mesh_size(1), requested_mesh_size(2)); %XYZ pointcloud
-                
-        %displays it
-        axes(ha2);        
-        set(h,'XData',reshape(pt_X, 1,nb_elem))
-        set(h,'YData',reshape(pt_Y, 1,nb_elem))
-        set(h,'ZData',reshape(pt_Z, 1,nb_elem))
-               
-        drawnow; %this checks for interrupts
-        ok = ishandle(f); %does the figure still exist
+        result = mexZED('grab', RuntimeParameters);
+        if(strcmp(result,'SUCCESS'))
+            % retrieve letf image
+            image_left = mexZED('retrieveImage', 0); %left
+            %displays it
+            axes(ha1);
+            imshow(image_left);
+
+            % retrieve the point cloud, resized
+            [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3, requested_mesh_size(1), requested_mesh_size(2)); %XYZ pointcloud
+
+            %displays it
+            axes(ha2);        
+            set(h,'XData',reshape(pt_X, 1,nb_elem))
+            set(h,'YData',reshape(pt_Y, 1,nb_elem))
+            set(h,'ZData',reshape(pt_Z, 1,nb_elem))
+
+            drawnow; %this checks for interrupts
+            ok = ishandle(f); %does the figure still exist
+        end
     end
 end
 
