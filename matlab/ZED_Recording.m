@@ -1,14 +1,12 @@
 clc;
-disp('=========SL_ZED_WITH_MATLAB -- SVO Recording=========');
+disp('========= ZED SDK PLUGIN =========');
+disp('-- Record SVO File --');
 close all;
 clear mex; clear functions; clear all;
 
-mexZED('create');
-
-% parameter struct, the same as sl::InitParameters
-% values as enum number, defines in : sl/defines.hpp 
-% or from https://www.stereolabs.com/developers/documentation/API/
-% 1: true, 0: false for boolean
+% initial parameter structure, the same as sl::InitParameters
+% values as enum number, defines in : sl/defines.hpp
+% or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
 InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
@@ -27,8 +25,7 @@ if(strcmp(result,'SUCCESS'))
             % grab the current image
             result = mexZED('grab');
             if(strcmp(result,'SUCCESS'))
-                % record the current image
-                mexZED('record');
+                % record the grabbed image
                 f = f+1;
             end
         end
@@ -37,4 +34,5 @@ if(strcmp(result,'SUCCESS'))
     mexZED('disableRecording');
 end
 mexZED('close')
+disp('========= END =========');
 clear mex;

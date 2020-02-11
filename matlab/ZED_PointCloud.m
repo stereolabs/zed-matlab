@@ -1,14 +1,12 @@
 clc;
-disp('=========SL_ZED_WITH_MATLAB -- Point Cloud=========');
+disp('========= ZED SDK PLUGIN =========');
+disp('-- Get 3D Point Cloud --');
 close all;
 clear mex; clear functions; clear all;
 
-mexZED('create');
-
-% parameter struct, the same as sl::InitParameters
-% values as enum number, defines in : sl/defines.hpp 
-% or from https://www.stereolabs.com/developers/documentation/API/
-% 1: true, 0: false for boolean
+% initial parameter structure, the same as sl::InitParameters
+% values as enum number, defines in : sl/defines.hpp
+% or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
 InitParameters.camera_resolution = 2; %HD720
 InitParameters.camera_fps = 60;
@@ -16,15 +14,13 @@ InitParameters.coordinate_units = 2; %METER
 InitParameters.depth_mode =  1; %PERFORMANCE
 InitParameters.coordinate_system = 3; %COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP
 %InitParameters.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
-result = mexZED('open', InitParameters)
 
-% DepthClamp value
+% DepthClamp value, maximum depth (in METER)
 depth_max = 5;
-% Step for mesh display
-data_Step = 10;
+InitParameters.depth_maximum_distance = depth_max; 
+result = mexZED('open', InitParameters);
 
 if(strcmp(result,'SUCCESS'))
-    mexZED('setDepthMaxRangeValue', depth_max)
     % Create Figure
     f = figure('name','ZED SDK : Point Cloud','NumberTitle','off');
     %create 2 sub figure
@@ -37,20 +33,17 @@ if(strcmp(result,'SUCCESS'))
     grid on;
     hold on;
     
-    % init mesh data
-    image_size = mexZED('getResolution')    
-    requested_mesh_size = [128 72];
-    pt_X = zeros(requested_mesh_size);
-    pt_Y = zeros(requested_mesh_size);
-    pt_Z = zeros(requested_mesh_size);
-    
-    nb_elem = requested_mesh_size(1) * requested_mesh_size(2);
-    h = plot3(reshape(pt_X, 1,nb_elem), reshape( pt_Y, 1,nb_elem), reshape( pt_Z, 1,nb_elem), '.');
+    % init point cloud data
+    requested_size = [128 72];
+    nb_elem = requested_size(1) * requested_size(2);
+    pt_X = zeros(requested_size);
+    pt_Y = zeros(requested_size);
+    pt_Z = zeros(requested_size);
     
     % Setup runtime parameters
     RuntimeParameters.sensing_mode = 0; % STANDARD sensing mode
-    RuntimeParameters.enable_depth = 1;
-    RuntimeParameters.enable_point_cloud = 1;
+    
+    h = plot3(reshape(pt_X, 1,nb_elem), reshape( pt_Y, 1,nb_elem), reshape( pt_Z, 1,nb_elem), '.');
     
     ok = 1;
     % loop over frames
@@ -65,13 +58,13 @@ if(strcmp(result,'SUCCESS'))
             imshow(image_left);
 
             % retrieve the point cloud, resized
-            [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3, requested_mesh_size(1), requested_mesh_size(2)); %XYZ pointcloud
+            [pt_X, pt_Y, pt_Z] = mexZED('retrieveMeasure', 3, requested_size(1), requested_size(2)); %XYZ pointcloud
 
             %displays it
-            axes(ha2);        
+            axes(ha2);
             set(h,'XData',reshape(pt_X, 1,nb_elem))
             set(h,'YData',reshape(pt_Y, 1,nb_elem))
-            set(h,'ZData',reshape(pt_Z, 1,nb_elem))
+            set(h,'ZData',reshape(pt_Z, 1,nb_elem))  
 
             drawnow; %this checks for interrupts
             ok = ishandle(f); %does the figure still exist
@@ -81,4 +74,5 @@ end
 
 % Make sure to call this function to free the memory before use this again
 mexZED('close')
+disp('========= END =========');
 clear mex;

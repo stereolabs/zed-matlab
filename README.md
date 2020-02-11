@@ -4,14 +4,14 @@ This sample shows how to use the ZED SDK functionalities  within Matlab.
 
 ## Getting started
 
-- First, download the latest version of the ZED SDK on [stereolabs.com](https://www.stereolabs.com).
-- For more information, read the ZED [API documentation](https://www.stereolabs.com/developers/documentation/API/).
+- First, download the latest version of the ZED SDK on [stereolabs.com](https://www.stereolabs.com/developers/release/).
+- For more information, read the ZED [API documentation](https://www.stereolabs.com/docs/api/index.html).
 
 ### Prerequisites
 
-- Windows 7 64bits or later, Ubuntu 16.04
+- Windows 10 64bits or later, Ubuntu 16.04 or higher.
 - Matlab with MEX compiler installed
-- [ZED SDK](https://www.stereolabs.com/developers/) and its dependency ([CUDA](https://developer.nvidia.com/cuda-downloads))
+- [ZED SDK](https://www.stereolabs.com/developers/release/) and its dependency ([CUDA](https://developer.nvidia.com/cuda-downloads))
 
 
 ## Build the program
@@ -36,7 +36,7 @@ In the Matlab directory, open the file `ZED_Camera.m` with Matlab and press run.
 
 ## Features
 
-This sample is split into 3 parts, each of them shows a specific feature of the ZED SDK in Matlab.
+This sample is split into 5 scripts, each of them shows a specific feature of the ZED SDK in Matlab.
 
 1. `ZED_Camera.m` :
 
@@ -56,6 +56,14 @@ This sample is split into 3 parts, each of them shows a specific feature of the 
 
 	<img src="ZED_PointCloud.png" alt="Drawing" style="width: 600px;"/>
 
+4. `ZED_Recording.m` :
+
+	This script shows how to record a video sequence into 'svo' format which can be playback with the ZED SDK.
+	
+5. `ZED_ObjectDetection.m` :
+
+	This script use the ability of the ZED2 to detect objects, a video window shows the results.
+	
 ### Limitations
 This sample application is not designed to run in real time
 
