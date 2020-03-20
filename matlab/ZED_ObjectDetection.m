@@ -51,7 +51,7 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
                 ok = ishandle(f); %does the figure still exist
             end
          end
-     end
+    end
 end
 
 % Make sure to call this function to free the memory before use this again

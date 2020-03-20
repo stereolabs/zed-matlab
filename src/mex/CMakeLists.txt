@@ -1,5 +1,11 @@
 set(TARGET mexZED)
 
+if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
+SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+endif()
+
+
+
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${ZED_INCLUDE_DIRS})
 include_directories(${OpenCV_INCLUDE_DIRS})

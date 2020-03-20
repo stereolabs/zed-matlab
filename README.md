@@ -32,18 +32,18 @@ Download the sample and execute the following command in a terminal:
     make install
 
 ## Run the program
-In the Matlab directory, open the file `ZED_Camera.m` with Matlab and press run. Press any key to exit the program.
+In the Matlab directory, open the file `ZED_DepthSensing.m` with Matlab and press run. Press any key to exit the program.
 
 ## Features
 
-This sample is split into 5 scripts, each of them shows a specific feature of the ZED SDK in Matlab.
+This sample is split into 6 scripts, each of them shows a specific feature of the ZED SDK in Matlab.
 
-1. `ZED_Camera.m` :
+1. `ZED_DepthSensing.m` :
 
 	In this part, we first initialize the ZED Camera and then retrieve both stereo images (Left and Right) as well as the depth data (32-bits float buffer) and the depth image normalized to 8-bits (grayscale). Then, with Matlab, we compute the depth histogram from the depth data values and display it.
 
 	<img src="ZED_Camera.png" alt="Drawing" style="width: 600px;"/>
-
+	
 2. `ZED_Tracking.m` :
 
 	This part shows how to get the positional tracking information. First, we initialize the ZED camera and the tracking, then we display the current left image as well as all the positions of the camera.
@@ -63,6 +63,10 @@ This sample is split into 5 scripts, each of them shows a specific feature of th
 5. `ZED_ObjectDetection.m` :
 
 	This script use the ability of the ZED2 to detect objects, a video window shows the results.
+	
+6. `ZED_CameraControl.m` :
+
+	This script shows how to control the video settings of the ZED camera.
 	
 ### Limitations
 This sample application is not designed to run in real time

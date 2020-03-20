@@ -134,6 +134,17 @@ inline bool checkParams(int params, int required_1, int required_2, bool print_w
     return true;
 }
 
+inline bool checkParamsAtLeast(int params, int number, bool print_warning = true) {
+    if (params - 1 < number) {
+        if (print_warning) {
+            std::string error = "Invalid parameter number, " + std::to_string(number) + " required, " + std::to_string(params - 1) + " given.";
+            mexWarnMsgTxt(error.c_str());
+        }
+        return false;
+    }
+    return true;
+}
+
 void fillCameraParam(mxArray *pArray, sl::CameraParameters &param) {
     mxSetField(pArray, 0, fieldsIntra[0], mxCreateDoubleScalar(param.cx));
     mxSetField(pArray, 0, fieldsIntra[1], mxCreateDoubleScalar(param.cy));
@@ -397,28 +408,50 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     }
 
     else if(!strcmp(command, "setCameraSettings")) {
-        if(checkZED() && checkParams(nrhs, 2)) {
+        if(checkZED() && checkParamsAtLeast(nrhs, 2)) {
             char settingName[64];
             mxGetString(prhs[1], settingName, 64);
-            double *ptr_ = mxGetPr(prhs[2]);
-            int val = ptr_[0];
 
-            if(!strcmp(settingName, "brightness"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS, val);
-            else if(!strcmp(settingName, "contrast"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::CONTRAST,val);
-            else if(!strcmp(settingName, "hue"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::HUE, val);
-            else if(!strcmp(settingName, "saturation"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::SATURATION, val);
-            else if(!strcmp(settingName, "gain"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::GAIN, val);
-            else if(!strcmp(settingName, "exposure"))
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE, val);
-            else if(!strcmp(settingName, "whitebalance")) 
-                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE, val);
-             else
-                mexWarnMsgTxt("Unknown VIDEO SETTINGS");
+            if (!strcmp(settingName, "aec_agc_roi")) {
+                double* ptr_ = mxGetPr(prhs[2]);
+                sl::Rect roi(ptr_[0], ptr_[1], ptr_[2], ptr_[3]);
+
+                sl::SIDE side = sl::SIDE::BOTH;
+                if (nrhs == 4) {
+                    ptr_ = mxGetPr(prhs[3]);
+                    side = static_cast<sl::SIDE>((int)ptr_[0]);
+                }
+
+                bool reset = false;
+                if (nrhs == 5) {
+                    ptr_ = mxGetPr(prhs[3]);
+                    reset = (int)ptr_[0];
+                }
+                zedCam->setCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC_ROI, roi, side, reset);
+            } else {
+
+                double* ptr_ = mxGetPr(prhs[2]);
+                int val = ptr_[0];
+
+                if (!strcmp(settingName, "brightness"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS, val);
+                else if (!strcmp(settingName, "contrast"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::CONTRAST, val);
+                else if (!strcmp(settingName, "hue"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::HUE, val);
+                else if (!strcmp(settingName, "saturation"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::SATURATION, val);
+                else if (!strcmp(settingName, "gain"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::GAIN, val);
+                else if (!strcmp(settingName, "exposure"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE, val);
+                else if (!strcmp(settingName, "aec_agc"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC, val);
+                else if (!strcmp(settingName, "whitebalance"))
+                    zedCam->setCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE, val);
+                else
+                    mexWarnMsgTxt("Unknown VIDEO SETTINGS");
+            }
             err = sl::ERROR_CODE::SUCCESS;
         }
     }
@@ -427,28 +460,41 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if(checkZED() && checkParams(nrhs, 1)) {
             char settingName[64];
             mxGetString(prhs[1], settingName, 64);
-            double val = 0;
+            
+            if (!strcmp(settingName, "aec_agc_roi")) {
+                sl::Rect roi;
+                double val[4];
+                zedCam->getCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC_ROI, roi);
+                val[0] = roi.x;
+                val[1] = roi.y;
+                val[2] = roi.width;
+                val[3] = roi.height;
+                plhs[0] = mxCreateDoubleMatrix(1, 4, mxREAL);
+                memcpy(mxGetPr(plhs[0]), &val, 4 * sizeof(double));
+            } else {
+                double val = 0;
+                if (!strcmp(settingName, "brightness"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS);
+                else if (!strcmp(settingName, "contrast"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::CONTRAST);
+                else if (!strcmp(settingName, "hue"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::HUE);
+                else if (!strcmp(settingName, "saturation"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::SATURATION);
+                else if (!strcmp(settingName, "gain"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::GAIN);
+                else if (!strcmp(settingName, "exposure"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE);
+                else if (!strcmp(settingName, "aec_agc"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC);
+                else if (!strcmp(settingName, "whitebalance"))
+                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE);
+                else
+                    mexWarnMsgTxt("Unknown VIDEO SETTINGS");
 
-            if(!strcmp(settingName, "brightness"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS);
-            else if(!strcmp(settingName, "contrast"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::CONTRAST);
-            else if(!strcmp(settingName, "hue"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::HUE);
-            else if(!strcmp(settingName, "saturation"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::SATURATION);
-            else if(!strcmp(settingName, "gain"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::GAIN);
-            else if(!strcmp(settingName, "exposure"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE);
-            else if(!strcmp(settingName, "whitebalance"))
-                val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE);
-             else 
-				mexWarnMsgTxt("Unknown VIDEO SETTINGS");
-
-            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
-
+                plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
+                memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
+            }
             err = sl::ERROR_CODE::SUCCESS;
         }
     }
