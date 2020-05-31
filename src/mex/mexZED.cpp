@@ -304,7 +304,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             if(checkParams(nrhs, 1, 3)) {
                 double *ptr_ = mxGetPr(prhs[1]);
                 int val = ptr_[0];
-                if(val < sl::VIEW::LAST)
+                if(val < static_cast<int>(sl::VIEW::LAST))
                     view = static_cast<sl::VIEW>(val);
                 else {
 					mexWarnMsgTxt("Unknown VIEW requested");
@@ -342,7 +342,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             if(checkParams(nrhs, 1, 3)) {
                 double *ptr_ = mxGetPr(prhs[1]);
                 int val = ptr_[0];
-                if(val < sl::VIEW::LAST)
+                if(val < static_cast<int>(sl::MEASURE::LAST))
                     measure = static_cast<sl::MEASURE>(val);
                 else {
                     mexWarnMsgTxt("Unknown MEASURE requested");
