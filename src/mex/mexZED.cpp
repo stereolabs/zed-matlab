@@ -168,33 +168,58 @@ void fillCameraParam(mxArray *pArray, sl::CameraParameters &param) {
 
 const char* point3D[] = { "x", "y", "z"};
 const char* point2D[] = { "u", "v"};
-const char* fieldsObjectData[] = { "id","label", "tracking_state", "position", "bounding_box_2d", "bounding_box_3d"};
+const char* fieldsObjectData[] = { "id", "label", "tracking_state", "action_state", "confidence", "position", "velocity", "bounding_box_2d", "bounding_box_3d", "keypoint_2d", "keypoint"};
 void fillObjectData(mxArray* pArray, sl::ObjectData& obj, int idx) {
 
     mxSetField(pArray, idx, fieldsObjectData[0], mxCreateDoubleScalar(static_cast<double>(obj.id)));
     mxSetField(pArray, idx, fieldsObjectData[1], mxCreateDoubleScalar(static_cast<double>(obj.label)));
     mxSetField(pArray, idx, fieldsObjectData[2], mxCreateDoubleScalar(static_cast<double>(obj.tracking_state)));
+    mxSetField(pArray, idx, fieldsObjectData[3], mxCreateDoubleScalar(static_cast<double>(obj.action_state)));
+    mxSetField(pArray, idx, fieldsObjectData[4], mxCreateDoubleScalar(static_cast<double>(obj.confidence)));
 
-    mxArray* position3d = mxCreateStructMatrix(1, 1, 3, point3D);
-    mxSetField(position3d, 0, "x", mxCreateDoubleScalar(obj.position.x));
-    mxSetField(position3d, 0, "y", mxCreateDoubleScalar(obj.position.y));
-    mxSetField(position3d, 0, "z", mxCreateDoubleScalar(obj.position.z));
-    mxSetField(pArray, idx, fieldsObjectData[3], position3d);
+    mxArray* position = mxCreateStructMatrix(1, 1, 3, point3D);
+    mxSetField(position, 0, "x", mxCreateDoubleScalar(obj.position.x));
+    mxSetField(position, 0, "y", mxCreateDoubleScalar(obj.position.y));
+    mxSetField(position, 0, "z", mxCreateDoubleScalar(obj.position.z));
+    mxSetField(pArray, idx, fieldsObjectData[5], position);
     
-    mxArray* bb2d = mxCreateStructMatrix(1, obj.bounding_box_2d.size(), 2, point2D);
+    mxArray* velocity = mxCreateStructMatrix(1, 1, 3, point3D);
+    mxSetField(velocity, 0, "x", mxCreateDoubleScalar(obj.velocity.x));
+    mxSetField(velocity, 0, "y", mxCreateDoubleScalar(obj.velocity.y));
+    mxSetField(velocity, 0, "z", mxCreateDoubleScalar(obj.velocity.z));
+    mxSetField(pArray, idx, fieldsObjectData[6], velocity);
+    
+    mxArray* bounding_box_2d = mxCreateStructMatrix(1, obj.bounding_box_2d.size(), 2, point2D);
     for (int i = 0; i < obj.bounding_box_2d.size(); i++){
-        mxSetField(bb2d, i, "u", mxCreateDoubleScalar(obj.bounding_box_2d[i].x));
-        mxSetField(bb2d, i, "v", mxCreateDoubleScalar(obj.bounding_box_2d[i].y));
+        mxSetField(bounding_box_2d, i, "u", mxCreateDoubleScalar(obj.bounding_box_2d[i].x));
+        mxSetField(bounding_box_2d, i, "v", mxCreateDoubleScalar(obj.bounding_box_2d[i].y));
     }
-    mxSetField(pArray, idx, fieldsObjectData[4], bb2d);
+    mxSetField(pArray, idx, fieldsObjectData[7], bounding_box_2d);
 
-    mxArray* bb3d = mxCreateStructMatrix(1, obj.bounding_box.size(), 3, point3D);
+    mxArray* bounding_box = mxCreateStructMatrix(1, obj.bounding_box.size(), 3, point3D);
     for (int i = 0; i < obj.bounding_box.size(); i++) {
-        mxSetField(bb3d, i, "x", mxCreateDoubleScalar(obj.bounding_box[i].x));
-        mxSetField(bb3d, i, "y", mxCreateDoubleScalar(obj.bounding_box[i].y));
-        mxSetField(bb3d, i, "z", mxCreateDoubleScalar(obj.bounding_box[i].z));
+        mxSetField(bounding_box, i, "x", mxCreateDoubleScalar(obj.bounding_box[i].x));
+        mxSetField(bounding_box, i, "y", mxCreateDoubleScalar(obj.bounding_box[i].y));
+        mxSetField(bounding_box, i, "z", mxCreateDoubleScalar(obj.bounding_box[i].z));
     }
-    mxSetField(pArray, idx, fieldsObjectData[5], bb3d);
+    mxSetField(pArray, idx, fieldsObjectData[8], bounding_box);
+
+    
+    mxArray* keypoint_2d = mxCreateStructMatrix(1, obj.keypoint_2d.size(), 2, point2D);
+    for (int i = 0; i < obj.keypoint_2d.size(); i++){
+        mxSetField(keypoint_2d, i, "u", mxCreateDoubleScalar(obj.keypoint_2d[i].x));
+        mxSetField(keypoint_2d, i, "v", mxCreateDoubleScalar(obj.keypoint_2d[i].y));
+    }
+    mxSetField(pArray, idx, fieldsObjectData[9], keypoint_2d);
+
+    mxArray* keypoint = mxCreateStructMatrix(1, obj.keypoint.size(), 3, point3D);
+    for (int i = 0; i < obj.keypoint.size(); i++) {
+        mxSetField(keypoint, i, "x", mxCreateDoubleScalar(obj.keypoint[i].x));
+        mxSetField(keypoint, i, "y", mxCreateDoubleScalar(obj.keypoint[i].y));
+        mxSetField(keypoint, i, "z", mxCreateDoubleScalar(obj.keypoint[i].z));
+    }
+    mxSetField(pArray, idx, fieldsObjectData[10], keypoint);
+
 }
 
 const char* fieldsObject[] = { "time_stamp", "is_new", "is_tracked", "object_list" };
@@ -203,7 +228,7 @@ void fillObjects(mxArray* pArray, sl::Objects& objs) {
     mxSetField(pArray, 0, fieldsObject[1], mxCreateDoubleScalar(static_cast<double>(objs.is_new)));
     mxSetField(pArray, 0, fieldsObject[2], mxCreateDoubleScalar(static_cast<double>(objs.is_tracked)));
 
-    mxArray* obj = mxCreateStructMatrix(1, objs.object_list.size(), 6, fieldsObjectData);
+    mxArray* obj = mxCreateStructMatrix(1, objs.object_list.size(), 11, fieldsObjectData);
     for (int i = 0; i < objs.object_list.size(); i++)
         fillObjectData(obj, objs.object_list[i], i);    
     mxSetField(pArray, 0, fieldsObject[3], obj);

@@ -51,6 +51,8 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
                     clr = clrs(mod(max(0, objs.object_list(o).id), 6)+1, :);
                     rectangle('Position', [bb2d(1).u * ratio(1), bb2d(1).v * ratio(2), (bb2d(3).u - bb2d(1).u) * ratio(1), (bb2d(3).v - bb2d(1).v) * ratio(2)]...
                         ,'Curvature',0.05, 'LineWidth',3, 'EdgeColor', clr);
+                    
+                    ['Id: ' num2str(objs.object_list(o).id) ' Conf: ', num2str(objs.object_list(o).confidence)]
                 end
                 
                 drawnow;  %this checks for interrupts  
