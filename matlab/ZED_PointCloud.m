@@ -9,7 +9,6 @@ clear mex; clear functions; clear all;
 % or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
 InitParameters.camera_resolution = 2; %HD720
-InitParameters.camera_fps = 60;
 InitParameters.coordinate_units = 2; %METER
 InitParameters.depth_mode =  1; %PERFORMANCE
 InitParameters.coordinate_system = 3; %COORDINATE_SYSTEM_RIGHT_HANDED_Z_UP
@@ -22,7 +21,7 @@ result = mexZED('open', InitParameters);
 
 if(strcmp(result,'SUCCESS'))
     % Create Figure
-    f = figure('name','ZED SDK : Point Cloud','NumberTitle','off');
+    f = figure('name','ZED SDK : Point Cloud','NumberTitle','off','keypressfcn',@(obj,evt) 0);
     %create 2 sub figure
     ha1 = axes('Position',[0.05,0.7,0.9,0.25]);
     ha2 = axes('Position',[0.05,0.05,0.9,0.6]);
@@ -45,9 +44,9 @@ if(strcmp(result,'SUCCESS'))
     
     h = plot3(reshape(pt_X, 1,nb_elem), reshape( pt_Y, 1,nb_elem), reshape( pt_Z, 1,nb_elem), '.');
     
-    ok = 1;
-    % loop over frames
-    while ok
+    key = 1;
+    % loop over frames, till Esc is pressed
+    while (key ~= 27)
         % grab the current image and compute the depth
         result = mexZED('grab', RuntimeParameters);
         if(strcmp(result,'SUCCESS'))
@@ -67,9 +66,13 @@ if(strcmp(result,'SUCCESS'))
             set(h,'ZData',reshape(pt_Z, 1,nb_elem))  
 
             drawnow; %this checks for interrupts
-            ok = ishandle(f); %does the figure still exist
+            key = uint8(get(f,'CurrentCharacter'));
+            if(~length(key))
+                key=0;
+            end
         end
     end
+    close(f)
 end
 
 % Make sure to call this function to free the memory before use this again

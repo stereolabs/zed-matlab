@@ -5,14 +5,14 @@ close all;
 clear mex; clear functions; clear all;
 
 % initial parameter structure, the same as sl::InitParameters
-% values as enum number, defines in : sl/defines.hpp
+% values as enum number, defines qin : sl/defines.hpp
 % or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
 InitParameters.camera_resolution = 2; %HD720
-InitParameters.camera_fps = 60;
 InitParameters.coordinate_units = 2; %METER
-InitParameters.depth_mode = 1; %PERFORMANCE
+InitParameters.depth_mode = 3; %ULTRA
 %InitParameters.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
+InitParameters.depth_minimum_distance = 0.7;% Define maximum depth (in METER)
 InitParameters.depth_maximum_distance = 7;% Define maximum depth (in METER)
 result = mexZED('open', InitParameters);
 
@@ -27,9 +27,9 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
     % Setup runtime parameters
     RuntimeParameters.sensing_mode = 0; % STANDARD sensing mode
 
-    ok = 1;
+    key = 1;
     % loop over frames, till Esc is pressed
-    while (ok ~= 27)
+    while (key ~= 27)
         % grab the current image and compute the depth
         result = mexZED('grab', RuntimeParameters);        
         if(strcmp(result,'SUCCESS'))
@@ -60,15 +60,15 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
             % redraw figure
             drawnow;
             % check for interrupts
-            ok = uint8(get(f,'CurrentCharacter'));
-            if(~length(ok))
-                ok=0;
+            key = uint8(get(f,'CurrentCharacter'));
+            if(~length(key))
+                key=0;
             end
         end
     end
+    close(f)
 end
 
-close(f)
 % Make sure to call this function to free the memory before use this again
 mexZED('close')
 disp('========= END =========');

@@ -30,12 +30,10 @@
 // global var.
 static sl::Camera *zedCam = nullptr;
 
+const int BUFF_SIZE = 256;
+
 // C++ struct
-const char* fieldsIntra[] = {"cx", "cy", "disto", "d_fov", "fx" , "fy" , "h_fov" , "width" , "height" , "v_fov"};
 const char* fieldsParameters[] = {"serial_number", "firmware_version", "R", "t", "left_cam", "right_cam", "model"};
-const char* fieldsIMU[] = {"pose","angular_velocity", "linear_acceleration"};
-const char* fieldsObject[] = { "time_stamp", "is_new", "is_tracked", "object_list" };
-const char* fieldsObjectData[] = { "id","label", "tracking_state", "position", "bounding_box_2d", "bounding_box_3d"};
 
 // Interop. OpenCV-Matlab matrix type (float)
 template<class InputIterator, class OutputIterator>
@@ -98,10 +96,17 @@ mxArray* CvMat_to_new_mxArr(cv::Mat &matrix) {
     const int TYPE = matrix.type();
     if(CV_32FC1 == TYPE)
         return floatmat_to_mat<CV_32FC1>(matrix);
-    else if(CV_8UC3 == TYPE)
+    else if((CV_8UC3 == TYPE) || (CV_8UC1 == TYPE))
         return rgbimage_to_mat<IPL_DEPTH_8U>(matrix);
-
     return mxCreateDoubleMatrix(0, 0, mxREAL);
+}
+
+inline cv::Mat cvtMat(sl::Matrix3f &in){
+    return cv::Mat(3, 3, CV_32FC1, in.r);
+}
+
+inline cv::Mat cvtMat(sl::Matrix4f &in){
+    return cv::Mat(4, 4, CV_32FC1, in.m);
 }
 
 inline bool checkZED() {
@@ -145,6 +150,7 @@ inline bool checkParamsAtLeast(int params, int number, bool print_warning = true
     return true;
 }
 
+const char* fieldsIntra[] = {"cx", "cy", "disto", "d_fov", "fx" , "fy" , "h_fov" , "width" , "height" , "v_fov"};
 void fillCameraParam(mxArray *pArray, sl::CameraParameters &param) {
     mxSetField(pArray, 0, fieldsIntra[0], mxCreateDoubleScalar(param.cx));
     mxSetField(pArray, 0, fieldsIntra[1], mxCreateDoubleScalar(param.cy));
@@ -162,7 +168,7 @@ void fillCameraParam(mxArray *pArray, sl::CameraParameters &param) {
 
 const char* point3D[] = { "x", "y", "z"};
 const char* point2D[] = { "u", "v"};
-//const char* fieldsObjectData[] = { "id", "label", "tracking_state", "position", "bounding_box_2d", "bounding_box_3d" };
+const char* fieldsObjectData[] = { "id","label", "tracking_state", "position", "bounding_box_2d", "bounding_box_3d"};
 void fillObjectData(mxArray* pArray, sl::ObjectData& obj, int idx) {
 
     mxSetField(pArray, idx, fieldsObjectData[0], mxCreateDoubleScalar(static_cast<double>(obj.id)));
@@ -191,7 +197,7 @@ void fillObjectData(mxArray* pArray, sl::ObjectData& obj, int idx) {
     mxSetField(pArray, idx, fieldsObjectData[5], bb3d);
 }
 
-//const char* fieldsObject[] = { "time_stamp", "is_new", "is_tracked", "object_list"};
+const char* fieldsObject[] = { "time_stamp", "is_new", "is_tracked", "object_list" };
 void fillObjects(mxArray* pArray, sl::Objects& objs) {
     mxSetField(pArray, 0, fieldsObject[0], mxCreateDoubleScalar(static_cast<double>(objs.timestamp.getMilliseconds())));
     mxSetField(pArray, 0, fieldsObject[1], mxCreateDoubleScalar(static_cast<double>(objs.is_new)));
@@ -203,48 +209,160 @@ void fillObjects(mxArray* pArray, sl::Objects& objs) {
     mxSetField(pArray, 0, fieldsObject[3], obj);
 }
 
+const char* fieldsTemp[] = {"IMU", "BAROMETER", "ONBOARD_LEFT", "ONBOARD_RIGHT" };
+void fillTemp(mxArray* pArray, sl::SensorsData::TemperatureData& temp) { 
+    mxSetField(pArray, 0, fieldsTemp[0], mxCreateDoubleScalar(temp.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::IMU]));
+    mxSetField(pArray, 0, fieldsTemp[1], mxCreateDoubleScalar(temp.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::BAROMETER]));
+    mxSetField(pArray, 0, fieldsTemp[2], mxCreateDoubleScalar(temp.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_LEFT]));
+    mxSetField(pArray, 0, fieldsTemp[3], mxCreateDoubleScalar(temp.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_RIGHT]));
+}
+
+const char* fieldsMag[] = {"is_available", "timestamp", "magnetic_field_uncalibrated", "effective_rate" };
+void fillMag(mxArray* pArray, sl::SensorsData::MagnetometerData& mag) { 
+    //is_available
+    mxSetField(pArray, 0, fieldsMag[0], mxCreateDoubleScalar(mag.is_available));
+
+    //timestamp
+    mxSetField(pArray, 0, fieldsMag[1], mxCreateDoubleScalar(mag.timestamp.getMilliseconds()));
+
+    //magnetic_field_uncalibrated
+    const mxClassID cid = cvm_traits<CV_32FC1>::CID;
+    mxArray* magnetic_field_uncalibrated = mxCreateNumericMatrix(1, 3, cid, mxREAL);
+    memcpy(mxGetPr(magnetic_field_uncalibrated), &(mag.magnetic_field_uncalibrated), 3 * sizeof(float));
+    mxSetField(pArray, 0, fieldsMag[2], magnetic_field_uncalibrated);    
+
+    //effective_rate
+    mxSetField(pArray, 0, fieldsMag[3], mxCreateDoubleScalar(mag.effective_rate));
+}
+
+const char* fieldsBaro[] = {"is_available", "timestamp", "pressure", "relative_altitude", "effective_rate" };
+void fillBaro(mxArray* pArray, sl::SensorsData::BarometerData& baro) { 
+    //is_available
+    mxSetField(pArray, 0, fieldsBaro[0], mxCreateDoubleScalar(baro.is_available));
+
+    //timestamp
+    mxSetField(pArray, 0, fieldsBaro[1], mxCreateDoubleScalar(baro.timestamp.getMilliseconds()));
+
+    //pressure
+    mxSetField(pArray, 0, fieldsBaro[2], mxCreateDoubleScalar(baro.pressure));
+    
+    //relative_altitude
+    mxSetField(pArray, 0, fieldsBaro[3], mxCreateDoubleScalar(baro.relative_altitude));
+
+    //effective_rate
+    mxSetField(pArray, 0, fieldsBaro[4], mxCreateDoubleScalar(baro.effective_rate));
+}
+
+const char* fieldsIMU[] = {"is_available", "timestamp", "pose", "pose_covariance", "angular_velocity", "linear_acceleration","angular_velocity_covariance","linear_acceleration_covariance","effective_rate"};
+void fillImu(mxArray* pArray, sl::SensorsData::IMUData& imu) { 
+    //is_available
+    mxSetField(pArray, 0, fieldsIMU[0], mxCreateDoubleScalar(imu.is_available));
+
+    //timestamp
+    mxSetField(pArray, 0, fieldsIMU[1], mxCreateDoubleScalar(imu.timestamp.getMilliseconds()));
+
+    //pose
+    cv::Mat pose = cvtMat(imu.pose);
+    mxSetField(pArray, 0, fieldsIMU[2], CvMat_to_new_mxArr(pose));
+
+    //pose_covariance
+    cv::Mat pose_covariance = cvtMat(imu.pose_covariance);
+    mxSetField(pArray, 0, fieldsIMU[3], CvMat_to_new_mxArr(pose_covariance));
+
+    //angular_velocity
+    const mxClassID cid = cvm_traits<CV_32FC1>::CID;
+    mxArray* angular_v = mxCreateNumericMatrix(1, 3, cid, mxREAL);
+    memcpy(mxGetPr(angular_v), &(imu.angular_velocity), 3 * sizeof(float));
+    mxSetField(pArray, 0, fieldsIMU[4], angular_v);
+
+    //linear_acceleration
+    mxArray* linear_a = mxCreateNumericMatrix(1, 3, cid, mxREAL);
+    memcpy(mxGetPr(linear_a), &(imu.linear_acceleration), 3 * sizeof(float));
+    mxSetField(pArray, 0, fieldsIMU[5], linear_a);
+
+    //angular_velocity_covariance
+    cv::Mat angular_velocity_covariance = cvtMat(imu.angular_velocity_covariance);
+    mxSetField(pArray, 0, fieldsIMU[6], CvMat_to_new_mxArr(angular_velocity_covariance));
+
+    //linear_acceleration_covariance
+    cv::Mat linear_acceleration_covariance = cvtMat(imu.linear_acceleration_covariance);
+    mxSetField(pArray, 0, fieldsIMU[7], CvMat_to_new_mxArr(linear_acceleration_covariance));
+
+    //effective_rate
+    mxSetField(pArray, 0, fieldsIMU[8], mxCreateDoubleScalar(imu.effective_rate));
+}
+
+const char* fieldsSensors[] = {"BarometerData", "IMUData", "MagnetometerData", "TemperatureData"};
+void fillSensors(mxArray* pArray, sl::SensorsData& data) {
+    auto baro = mxCreateStructMatrix(1, 1, 5, fieldsBaro);
+    fillBaro(baro, data.barometer);
+    mxSetField(pArray, 0, fieldsSensors[0], baro);
+    
+    auto imu = mxCreateStructMatrix(1, 1, 9, fieldsIMU);
+    fillImu(imu, data.imu);
+    mxSetField(pArray, 0, fieldsSensors[1], imu);
+    
+    auto mag = mxCreateStructMatrix(1, 1, 4, fieldsMag);
+    fillMag(mag, data.magnetometer);
+    mxSetField(pArray, 0, fieldsSensors[2], mag);
+    
+    auto temp = mxCreateStructMatrix(1, 1, 4, fieldsTemp);
+    fillTemp(temp, data.temperature);
+    mxSetField(pArray, 0, fieldsSensors[3], temp);
+}
+
+template <typename T>
+inline void getValue(std::string ref, std::string curr, mxArray* v_in, T& output) {
+   if(ref == curr) {
+        if(mxIsNumeric(v_in)){
+            output = static_cast<T>( mxGetPr(v_in)[0]);
+            //mexPrintf("Set %s\n", curr.c_str());
+        }
+        else
+            mexPrintf("Can not convert %s\n", curr.c_str());
+   }
+}
 
 /* MEX entry function */
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
 	sl::ERROR_CODE err = sl::ERROR_CODE::FAILURE;
     // each sub function is referred by a string 'command'
-    char command[128];
-    mxGetString(prhs[0], command, 128);
+    char command[BUFF_SIZE];
+    mxGetString(prhs[0], command, BUFF_SIZE);
 
     if(!strcmp(command, "open")) {
         zedCam = new sl::Camera();
         sl::InitParameters initParams;
         // check if we have ONE argument
         if(checkParams(nrhs, 1)) {
+            auto arg = prhs[1];
             // check if we have a parameter structure
-            if(mxIsStruct(prhs[1])) {
+            if(mxIsStruct(arg)) {
                 // for all fields of parameter structure overwrite parameters
-                for(int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
-                    const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
-                    mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
-                    int val = 0;
-                    char string_val[128];
-                    if(mxIsChar(field_val))
-                        mxGetString(field_val, string_val, 128);
-                    else
-                        val = *((double*) mxGetPr(field_val));
-                    //mexPrintf(" val %d  \n", val);
-                    if(!strcmp(field_name, "depth_mode")) initParams.depth_mode = static_cast<sl::DEPTH_MODE> (val);
-                    if(!strcmp(field_name, "coordinate_units")) initParams.coordinate_units = static_cast<sl::UNIT> (val);
-                    if(!strcmp(field_name, "coordinate_system")) initParams.coordinate_system = static_cast<sl::COORDINATE_SYSTEM> (val);
-                    if(!strcmp(field_name, "sdk_verbose")) initParams.sdk_verbose = val;
-                    if(!strcmp(field_name, "sdk_gpu_id")) initParams.sdk_gpu_id = val;
-                    if(!strcmp(field_name, "depth_minimum_distance")) initParams.depth_minimum_distance = val;
-                    if(!strcmp(field_name, "depth_maximum_distance")) initParams.depth_maximum_distance = val;
-                    if(!strcmp(field_name, "camera_disable_self_calib")) initParams.camera_disable_self_calib = val;
-                    if(!strcmp(field_name, "camera_image_flip")) initParams.camera_image_flip = val;                        
-                    if(!strcmp(field_name, "svo_input_filename")) initParams.input.setFromSVOFile(string_val);
-                    if(!strcmp(field_name, "camera_resolution")) initParams.camera_resolution = static_cast<sl::RESOLUTION> (val);
-                    if(!strcmp(field_name, "camera_fps")) initParams.camera_fps = val;
-                    if(!strcmp(field_name, "svo_real_time_mode")) initParams.svo_real_time_mode = val;
-                    if(!strcmp(field_name, "depth_stabilization")) initParams.depth_stabilization = val;
-                    if(!strcmp(field_name, "enable_right_side_measure")) initParams.enable_right_side_measure = val;
+                for(int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                    const char *field_name = mxGetFieldNameByNumber(arg, i);
+                    mxArray *field_val = mxGetFieldByNumber(arg, 0, i);
+                    if(mxIsChar(field_val) && (!strcmp(field_name, "svo_input_filename"))){
+                        char string_val[BUFF_SIZE];
+                        mxGetString(field_val, string_val, BUFF_SIZE);
+                        initParams.input.setFromSVOFile(string_val);
+                    }else{
+                        getValue(field_name, "depth_mode", field_val, initParams.depth_mode);
+                        getValue(field_name, "coordinate_units", field_val, initParams.coordinate_units);
+                        getValue(field_name, "coordinate_system", field_val, initParams.coordinate_system);
+                        getValue(field_name, "camera_resolution", field_val, initParams.camera_resolution);
+                        getValue(field_name, "sdk_verbose", field_val, initParams.sdk_verbose);
+                        getValue(field_name, "sdk_gpu_id", field_val, initParams.sdk_gpu_id);
+                        getValue(field_name, "depth_minimum_distance", field_val, initParams.depth_minimum_distance);
+                        getValue(field_name, "depth_maximum_distance", field_val, initParams.depth_maximum_distance);
+                        getValue(field_name, "camera_disable_self_calib", field_val, initParams.camera_disable_self_calib);
+                        getValue(field_name, "camera_image_flip", field_val, initParams.camera_image_flip);
+                        getValue(field_name, "camera_fps", field_val, initParams.camera_fps);
+                        getValue(field_name, "svo_real_time_mode", field_val, initParams.svo_real_time_mode);
+                        getValue(field_name, "depth_stabilization", field_val, initParams.depth_stabilization);
+                        getValue(field_name, "enable_right_side_measure", field_val, initParams.enable_right_side_measure);  
+                    }                  
                 }
             }
         }
@@ -274,25 +392,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     else if(!strcmp(command, "grab")) {
         if(checkZED()) {
-            sl::RuntimeParameters grabParams;
+            sl::RuntimeParameters param;
 			// check if we have a parameter structure
 			if ((nrhs > 1) && (mxIsStruct(prhs[1]))) {
 				// for all fields of parameter structure overwrite parameters
 				for (int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
 					const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
 					mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
-					int val = 0;
-					char string_val[128];
-					if (mxIsChar(field_val))
-						mxGetString(field_val, string_val, 128);
-					else
-						val = *((double*)mxGetPr(field_val));
-					if (!strcmp(field_name, "sensing_mode")) grabParams.sensing_mode = static_cast<sl::SENSING_MODE> (val);
-					if (!strcmp(field_name, "enable_depth")) grabParams.enable_depth = val;
-					if (!strcmp(field_name, "measure3D_reference_frame")) grabParams.measure3D_reference_frame = static_cast<sl::REFERENCE_FRAME> (val);
+                    
+                    getValue(field_name, "sensing_mode", field_val, param.sensing_mode);
+                    getValue(field_name, "enable_depth", field_val, param.enable_depth);
+                    getValue(field_name, "measure3D_reference_frame", field_val, param.measure3D_reference_frame);
 				}
 			}
-			err = zedCam->grab(grabParams);
+			err = zedCam->grab(param);
         }
 		// we return the string associated with the error
 		plhs[0] = mxCreateString(sl::toString(err).c_str());
@@ -319,20 +432,20 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 height = ptr_[0];
             }
 
-            cv::Mat image_rgb;
             sl::Mat tmp;
             err = zedCam->retrieveImage(tmp, view, sl::MEM::CPU, sl::Resolution(width, height));
-
-            int cv_type = CV_8UC4;
-
-            if(view == sl::VIEW::LEFT_GRAY || view == sl::VIEW::RIGHT_GRAY || view == sl::VIEW::LEFT_UNRECTIFIED_GRAY || view == sl::VIEW::RIGHT_UNRECTIFIED_GRAY)
-                cv_type = CV_8UC1;
-
-            cv::Mat cv_tmp = cv::Mat(tmp.getHeight(), tmp.getWidth(), cv_type, tmp.getPtr<sl::uchar1>());
-
-            if(cv_type == CV_8UC4)
+            int cv_type = (view == sl::VIEW::LEFT_GRAY || view == sl::VIEW::RIGHT_GRAY || view == sl::VIEW::LEFT_UNRECTIFIED_GRAY || view == sl::VIEW::RIGHT_UNRECTIFIED_GRAY) ? CV_8UC1 : CV_8UC4;
+            cv::Mat cv_tmp(tmp.getHeight(), tmp.getWidth(), cv_type, tmp.getPtr<sl::uchar1>());
+                        
+            if(cv_type == CV_8UC4){
+                cv::Mat image_rgb;
                 cv::cvtColor(cv_tmp, image_rgb, cv::COLOR_RGBA2RGB);
-            plhs[0] = CvMat_to_new_mxArr(image_rgb);
+                plhs[0] = CvMat_to_new_mxArr(image_rgb);
+            }else{
+                cv::Mat image_gray;
+                cv::cvtColor(cv_tmp, image_gray, cv::COLOR_GRAY2RGB);
+                plhs[0] = CvMat_to_new_mxArr(image_gray);
+            }
         }
     }
 
@@ -358,16 +471,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 height = ptr_[0];
             }
             
-            cv::Mat measure_mat;
             sl::Mat tmp;
             err = zedCam->retrieveMeasure(tmp, measure, sl::MEM::CPU, sl::Resolution(width, height));
-            int cv_type = CV_32FC1;
-
-            if((measure >= sl::MEASURE::XYZ &&  measure <= sl::MEASURE::NORMALS) || (measure >= sl::MEASURE::XYZ_RIGHT &&  measure < sl::MEASURE::LAST))
-                cv_type = CV_32FC4;
-
-            measure_mat = cv::Mat(tmp.getHeight(), tmp.getWidth(), cv_type, tmp.getPtr<sl::uchar1>());
-
+            int cv_type = ((measure >= sl::MEASURE::XYZ &&  measure <= sl::MEASURE::NORMALS) || (measure >= sl::MEASURE::XYZ_RIGHT &&  measure < sl::MEASURE::LAST)) ? CV_32FC4 : CV_32FC1;
+            cv::Mat measure_mat(tmp.getHeight(), tmp.getWidth(), cv_type, tmp.getPtr<sl::uchar1>());
             if(cv_type == CV_32FC4) {
                 std::vector<cv::Mat> mat_v;
                 cv::split(measure_mat, mat_v);
@@ -510,11 +617,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     else if(!strcmp(command, "getTimestamp")) {
         if(checkZED() && checkParams(nrhs, 1)) {
-            double* ptr_ = mxGetPr(prhs[1]);
-            int time_ref = ptr_[0];
+            int time_ref = mxGetPr(prhs[1])[0];
             double val = zedCam->getTimestamp(static_cast<sl::TIME_REFERENCE>(time_ref)).getMilliseconds();
-            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
+            plhs[0] = mxCreateDoubleScalar(val);
             err = sl::ERROR_CODE::SUCCESS;
         }
     }
@@ -553,7 +658,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     else if(!strcmp(command, "enablePositionalTracking")) {
         if(checkZED()) {
-            sl::PositionalTrackingParameters  trackParams;
+            sl::PositionalTrackingParameters  param;
             // check if we have a parameter structure
             if((nrhs > 1) && (mxIsStruct(prhs[1]))) {
 				sl::Transform tranform;
@@ -561,23 +666,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 for(int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
                     const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
                     mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
-                    int val = 0;
-                    char string_val[128];
-                    if(mxIsChar(field_val))
-                        mxGetString(field_val, string_val, 128);
-                    else
-                        val = *((double*) mxGetPr(field_val));
-                    if(!strcmp(field_name, "area_file_path")) trackParams.area_file_path = string_val;
-                    if(!strcmp(field_name, "enable_area_memory")) trackParams.enable_area_memory = val;
-                    if(!strcmp(field_name, "initial_world_transform")) {
-                        for(int col = 0; col < mxGetN(field_val); col++)
-                            for(int row = 0; row < mxGetM(field_val); row++)
-                                tranform(row, col) = (mxGetPr(field_val))[row + col*mxGetM(field_val)];
-                        trackParams.initial_world_transform = tranform;
+                    if(mxIsChar(field_val) && (!strcmp(field_name, "area_file_path"))){
+                        char string_val[BUFF_SIZE];
+                        mxGetString(field_val, string_val, BUFF_SIZE);
+                        param.area_file_path.set(string_val);
+                    } else {                        
+                        getValue(field_name, "enable_area_memory", field_val, param.enable_area_memory);
+                        getValue(field_name, "enable_imu_fusion", field_val, param.enable_imu_fusion);
+                        getValue(field_name, "enable_pose_smoothing", field_val, param.enable_pose_smoothing);
+                        getValue(field_name, "set_as_static", field_val, param.set_as_static);
+                        getValue(field_name, "set_floor_as_origin", field_val, param.set_floor_as_origin);
+                        if(!strcmp(field_name, "initial_world_transform")) {
+                            for(int col = 0; col < mxGetN(field_val); col++)
+                                for(int row = 0; row < mxGetM(field_val); row++)
+                                    tranform(row, col) = (mxGetPr(field_val))[row + col*mxGetM(field_val)];
+                            param.initial_world_transform = tranform;
+                        }
                     }
                 }
             }
-			err = zedCam->enablePositionalTracking(trackParams);            
+			err = zedCam->enablePositionalTracking(param);            
         }
 		// we return the string associated with the error
 		plhs[0] = mxCreateString(sl::toString(err).c_str());
@@ -585,63 +693,35 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 
     else if(!strcmp(command, "getPosition")) {
         if(checkZED() && checkParams(nrhs, 0)) {
-            cv::Mat position(4, 4, CV_32FC1);
-            sl::Pose path;
-            if(nrhs == 2) {
-                double *ptr_ = mxGetPr(prhs[1]);
-                int val = ptr_[0];
-                zedCam->getPosition(path, static_cast<sl::REFERENCE_FRAME>(val));
-            } else
-                zedCam->getPosition(path);
+            sl::REFERENCE_FRAME ref_f = sl::REFERENCE_FRAME::WORLD;
+            if(nrhs == 2) 
+                ref_f =  static_cast<sl::REFERENCE_FRAME>(mxGetPr(prhs[1])[0]);
 
-            for(int i = 0; i < 4; i++) {
-                for(int j = 0; j < 4; j++) {
-                    position.at<float>(i, j) = path.pose_data(i, j);
-                }
-            }
+            sl::Pose path;          
+            zedCam->getPosition(path,ref_f);
+            auto position = cvtMat(path.pose_data);
             plhs[0] = CvMat_to_new_mxArr(position);
             err = sl::ERROR_CODE::SUCCESS;
         }
     }
 
     else if(!strcmp(command, "getSensorsData")) {
-        if(checkZED() && checkParams(nrhs, 0)) {
+        if(checkZED() && checkParams(nrhs, 1)) {
             sl::SensorsData sensors;
             sl::TIME_REFERENCE t_ref = sl::TIME_REFERENCE::IMAGE;
-            if(nrhs == 2) {
-                double *ptr_ = mxGetPr(prhs[1]);
-                int val = ptr_[0];
-                t_ref = static_cast<sl::TIME_REFERENCE>(val);
-            }
-
+            if(nrhs == 2) 
+                t_ref = static_cast<sl::TIME_REFERENCE>(mxGetPr(prhs[1])[0]);            
             err = zedCam->getSensorsData(sensors, t_ref);
-
-            plhs[0] = mxCreateStructMatrix(1, 1, 3, fieldsIMU);
-
-            cv::Mat position(4, 4, CV_32FC1);
-            for(int i = 0; i < 4; i++) {
-                for(int j = 0; j < 4; j++) {
-                    position.at<float>(i, j) = sensors.imu.pose(i, j);
-                }
-            }
-            mxSetField(plhs[0], 0, fieldsIMU[0], CvMat_to_new_mxArr(position));
-
-            const mxClassID cid = cvm_traits<CV_32FC1>::CID;
-            mxArray* angular_v = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(angular_v), &(sensors.imu.angular_velocity), 3 * sizeof(float));
-            mxSetField(plhs[0], 0, fieldsIMU[1], angular_v);
-
-            mxArray* linear_a = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(linear_a), &(sensors.imu.linear_acceleration), 3 * sizeof(float));
-            mxSetField(plhs[0], 0, fieldsIMU[2], linear_a);
+            plhs[0] = mxCreateStructMatrix(1, 1, 4, fieldsSensors);
+            fillSensors(plhs[0], sensors);
         }
     }
    
     else if(!strcmp(command, "disablePositionalTracking")) {
         if(checkZED()) {
             if((nrhs > 1) && (mxIsChar(prhs[1]))) {
-                char area_file_path[128];
-                mxGetString(prhs[1], area_file_path, 128);
+                char area_file_path[BUFF_SIZE];
+                mxGetString(prhs[1], area_file_path, BUFF_SIZE);
                 zedCam->disablePositionalTracking(area_file_path);
             } else
                 zedCam->disablePositionalTracking();
@@ -658,18 +738,29 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     
     else if(!strcmp(command, "enableRecording")) {
         if(checkZED()) {
-            if(checkParams(nrhs, 1, false) || checkParams(nrhs, 2, false)) {
-                if(mxIsChar(prhs[1])) {
-                    char svo_path[128];
-                    mxGetString(prhs[1], svo_path, 128);
-                    sl::RecordingParameters rec_param;
-                    rec_param.video_filename = svo_path;
-                    if(checkParams(nrhs, 2, false)) {
-                        double *ptr_ = mxGetPr(prhs[2]);
-                        rec_param.compression_mode = static_cast<sl::SVO_COMPRESSION_MODE>((int)ptr_[0]);
+             if(nrhs == 2) {
+                sl::RecordingParameters param;
+                if(mxIsStruct(prhs[1])){
+                    for(int32_t i = 0; i < mxGetNumberOfFields(prhs[1]); i++) {
+                        const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
+                        mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
+                        if(mxIsChar(field_val) && (!strcmp(field_name, "video_filename"))) {
+                            char svo_path[BUFF_SIZE];
+                            mxGetString(field_val, svo_path, BUFF_SIZE);
+                            param.video_filename.set(svo_path);
+                        }else{
+                            getValue(field_name, "bitrate", field_val, param.bitrate);
+                            getValue(field_name, "compression_mode", field_val, param.compression_mode);
+                            getValue(field_name, "target_framerate", field_val, param.target_framerate);
+                            getValue(field_name, "transcode_streaming_input", field_val, param.transcode_streaming_input);
+                        }
                     }
-                    err = zedCam->enableRecording(rec_param);
+                }else if(mxIsChar(prhs[1])) {
+                    char svo_path[BUFF_SIZE];
+                    mxGetString(prhs[1], svo_path, BUFF_SIZE);
+                    param.video_filename.set(svo_path);
                 }
+                err = zedCam->enableRecording(param);
             }
         }
 		// we return the string associated with the error
@@ -686,20 +777,44 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else if (!strcmp(command, "enableObjectDetection")) {
         if (checkZED()) {
             sl::ObjectDetectionParameters param;
+            if(nrhs == 2) {
+                auto arg = prhs[1];
+                // check if we have a parameter structure            
+                if(mxIsStruct(arg)) {
+                    // for all fields of parameter structure overwrite parameters
+                    for(int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                        const char *field_name = mxGetFieldNameByNumber(arg, i);
+                        mxArray *field_val = mxGetFieldByNumber(arg, 0, i);
+                        getValue(field_name, "detection_model", field_val, param.detection_model);
+                        getValue(field_name, "enable_body_fitting", field_val, param.enable_body_fitting);
+                        getValue(field_name, "enable_mask_output", field_val, param.enable_mask_output);
+                        getValue(field_name, "enable_tracking", field_val, param.enable_tracking);
+                    }
+                }
+            }
             err = zedCam->enableObjectDetection(param);
         }
     }
 
     else if (!strcmp(command, "retrieveObjects")) {
         if (checkZED()) {
-            sl::ObjectDetectionRuntimeParameters rt_param;
-            if (checkParams(nrhs, 1, false)) {
-                double* ptr_ = mxGetPr(prhs[1]);
-                rt_param.detection_confidence_threshold = (int)ptr_[0];
-            }
+            sl::ObjectDetectionRuntimeParameters param;
+             if(nrhs == 2) {
+                auto arg = prhs[1];
+                // check if we have a parameter structure            
+                if(mxIsStruct(arg)) {
+                    // for all fields of parameter structure overwrite parameters
+                    for(int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                        const char *field_name = mxGetFieldNameByNumber(arg, i);
+                        auto field_val = mxGetFieldByNumber(arg, 0, i);
+                        getValue(field_name, "detection_confidence_threshold", field_val, param.detection_confidence_threshold);
+                    }
+                } else
+                    param.detection_confidence_threshold = static_cast<float>(mxGetPr(arg)[0]);                
+            }           
 
             sl::Objects objs;
-            err = zedCam->retrieveObjects(objs, rt_param);
+            err = zedCam->retrieveObjects(objs, param);
             plhs[0] = mxCreateStructMatrix(1, 1, 4, fieldsObject);
             fillObjects(plhs[0], objs);
         }
@@ -723,8 +838,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else if(!strcmp(command, "isZEDconnected")) {
         if(checkParams(nrhs, 0)) {
             double val = sl::Camera::getDeviceList().size();
-            plhs[0] = mxCreateDoubleMatrix(1, 1, mxREAL);
-            memcpy(mxGetPr(plhs[0]), &val, 1 * sizeof(double));
+            plhs[0] = mxCreateDoubleScalar(val);
             err = sl::ERROR_CODE::SUCCESS;
         }
     }
@@ -734,9 +848,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             double *ptr_ = mxGetPr(prhs[1]);
             int format = ptr_[0];
 
-            char save_path[128];
+            char save_path[BUFF_SIZE];
             if (mxIsChar(prhs[2])) {
-                mxGetString(prhs[2], save_path, 128);
+                mxGetString(prhs[2], save_path, BUFF_SIZE);
             }
 
             int color = 0;
@@ -756,9 +870,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             double *ptr_ = mxGetPr(prhs[1]);
             int format = ptr_[0];
 
-            char save_path[128];
+            char save_path[BUFF_SIZE];
             if (mxIsChar(prhs[2])) {
-                mxGetString(prhs[2], save_path, 128);
+                mxGetString(prhs[2], save_path, BUFF_SIZE);
             }
 
             int color = 0;

@@ -31,19 +31,19 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
     nbFrame = mexZED('getSVONumberOfFrames');    
     
     % Create Figure and wait for keyboard interruption to quit
-    f = figure('name','ZED SDK : Images and Depth','NumberTitle','off','keypressfcn','close');
+    f = figure('name','ZED SDK : Images and Depth','NumberTitle','off','keypressfcn',@(obj,evt) 0);
         
     % Setup runtime parameters
     RuntimeParameters.sensing_mode = 0; % STANDARD sensing mode
     
-    ok = 1;
-    % loop over frames
-    while ok        
+    key = 1;
+    % loop over frames, till Esc is pressed
+    while (key ~= 27)
         % grab the current image and compute the depth
         result = mexZED('grab', RuntimeParameters);        
         if(strcmp(result,'SUCCESS'))
             % retrieve letf image
-            image_left = mexZED('retrieveImage', 0); %left
+            image_left = mexZED('retrieveImage', 2); %left
             % retrieve right image
             image_right = mexZED('retrieveImage', 1); %right
             
@@ -75,9 +75,13 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
             xlabel('meters')
 
             drawnow; %this checks for interrupts
-            ok = ishandle(f); %does the figure still exist
+            key = uint8(get(f,'CurrentCharacter'));
+            if(~length(key))
+                key=0;
+            end
         end
     end
+    close(f)
 end
 
 % Make sure to call this function to free the memory before use this again

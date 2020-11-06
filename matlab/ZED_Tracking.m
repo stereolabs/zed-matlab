@@ -27,7 +27,7 @@ if(strcmp(result,'SUCCESS'))
     PositionArray = [];
     
     % Create Figure and wait for keyboard interruption to quit
-    f = figure('name','ZED SDK : Positional Tracking','NumberTitle','off');
+    f = figure('name','ZED SDK : Positional Tracking','NumberTitle','off','keypressfcn',@(obj,evt) 0);
     %create 2 sub figure
     ha1 = axes('Position',[0.05,0.7,0.9,0.25]);
     ha2 = axes('Position',[0.05,0.05,0.9,0.6]);
@@ -41,9 +41,9 @@ if(strcmp(result,'SUCCESS'))
     % init 3d display
     h = plot3(0,0,0, 'r');
     
-    ok = 1;
-    % loop over frames
-    while ok        
+    key = 1;
+    % loop over frames, till Esc is pressed
+    while (key ~= 27)       
         % grab the current image and compute the positional tracking
         result = mexZED('grab');
         if(strcmp(result,'SUCCESS'))
@@ -58,19 +58,20 @@ if(strcmp(result,'SUCCESS'))
             %stack positions
             PositionArray = [PositionArray; position(1,4) position(2,4) position(3,4)];
 
-            % retrieve IMU Data
-            IMUdata = mexZED('getSensorsData');
-
             axes(ha2);
             set(h,'XData',PositionArray(:,1))
             set(h,'YData',PositionArray(:,2))
             set(h,'ZData',PositionArray(:,3))
 
             drawnow; %this checks for interrupts
-            ok = ishandle(f); %does the figure still exist
+            key = uint8(get(f,'CurrentCharacter'));
+            if(~length(key))
+                key=0;
+            end
         end
     end
     mexZED('disablePositionalTracking');
+    close(f)
 end
 
 % Make sure to call this function to free the memory before use this again

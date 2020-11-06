@@ -16,8 +16,9 @@ result = mexZED('open', InitParameters);
 
 nb_frame_to_save = 1000;
 if(strcmp(result,'SUCCESS'))
-    svo_output_filename = 'MySVO.svo';
-    result =   mexZED('enableRecording', svo_output_filename);
+    RecordingParameters.video_filename = 'MySVO.svo';
+    RecordingParameters.compression_mode = 2;
+    result =   mexZED('enableRecording', RecordingParameters);
     if(strcmp(result,'SUCCESS'))
         disp('Start Recording');
         f = 0;
