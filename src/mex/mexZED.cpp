@@ -242,7 +242,7 @@ void fillTemp(mxArray* pArray, sl::SensorsData::TemperatureData& temp) {
     mxSetField(pArray, 0, fieldsTemp[3], mxCreateDoubleScalar(temp.temperature_map[sl::SensorsData::TemperatureData::SENSOR_LOCATION::ONBOARD_RIGHT]));
 }
 
-const char* fieldsMag[] = {"is_available", "timestamp", "magnetic_field_uncalibrated", "effective_rate" };
+const char* fieldsMag[] = {"is_available", "timestamp", "magnetic_field_calibrated", "magnetic_field_uncalibrated", "effective_rate" };
 void fillMag(mxArray* pArray, sl::SensorsData::MagnetometerData& mag) { 
     //is_available
     mxSetField(pArray, 0, fieldsMag[0], mxCreateDoubleScalar(mag.is_available));
@@ -250,14 +250,19 @@ void fillMag(mxArray* pArray, sl::SensorsData::MagnetometerData& mag) {
     //timestamp
     mxSetField(pArray, 0, fieldsMag[1], mxCreateDoubleScalar(mag.timestamp.getMilliseconds()));
 
-    //magnetic_field_uncalibrated
+    //magnetic_field_calibrated
     const mxClassID cid = cvm_traits<CV_32FC1>::CID;
+    mxArray* magnetic_field_calibrated = mxCreateNumericMatrix(1, 3, cid, mxREAL);
+    memcpy(mxGetPr(magnetic_field_calibrated), &(mag.magnetic_field_calibrated), 3 * sizeof(float));
+    mxSetField(pArray, 0, fieldsMag[2], magnetic_field_calibrated);
+
+    //magnetic_field_uncalibrated
     mxArray* magnetic_field_uncalibrated = mxCreateNumericMatrix(1, 3, cid, mxREAL);
     memcpy(mxGetPr(magnetic_field_uncalibrated), &(mag.magnetic_field_uncalibrated), 3 * sizeof(float));
-    mxSetField(pArray, 0, fieldsMag[2], magnetic_field_uncalibrated);    
+    mxSetField(pArray, 0, fieldsMag[3], magnetic_field_uncalibrated);    
 
     //effective_rate
-    mxSetField(pArray, 0, fieldsMag[3], mxCreateDoubleScalar(mag.effective_rate));
+    mxSetField(pArray, 0, fieldsMag[4], mxCreateDoubleScalar(mag.effective_rate));
 }
 
 const char* fieldsBaro[] = {"is_available", "timestamp", "pressure", "relative_altitude", "effective_rate" };
@@ -327,7 +332,7 @@ void fillSensors(mxArray* pArray, sl::SensorsData& data) {
     fillImu(imu, data.imu);
     mxSetField(pArray, 0, fieldsSensors[1], imu);
     
-    auto mag = mxCreateStructMatrix(1, 1, 4, fieldsMag);
+    auto mag = mxCreateStructMatrix(1, 1, 5, fieldsMag);
     fillMag(mag, data.magnetometer);
     mxSetField(pArray, 0, fieldsSensors[2], mag);
     
@@ -719,8 +724,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
     else if(!strcmp(command, "getPosition")) {
         if(checkZED() && checkParams(nrhs, 0)) {
             sl::REFERENCE_FRAME ref_f = sl::REFERENCE_FRAME::WORLD;
-            if(nrhs == 2) 
-                ref_f =  static_cast<sl::REFERENCE_FRAME>(mxGetPr(prhs[1])[0]);
+            if (nrhs == 2) {
+                int val = mxGetPr(prhs[1])[0];
+                ref_f = static_cast<sl::REFERENCE_FRAME>(val);
+            }
 
             sl::Pose path;          
             zedCam->getPosition(path,ref_f);
@@ -734,8 +741,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         if(checkZED() && checkParams(nrhs, 1)) {
             sl::SensorsData sensors;
             sl::TIME_REFERENCE t_ref = sl::TIME_REFERENCE::IMAGE;
-            if(nrhs == 2) 
-                t_ref = static_cast<sl::TIME_REFERENCE>(mxGetPr(prhs[1])[0]);            
+            if (nrhs == 2) {
+                int val = mxGetPr(prhs[1])[0];
+                t_ref = static_cast<sl::TIME_REFERENCE>(val);                
+            }
             err = zedCam->getSensorsData(sensors, t_ref);
             plhs[0] = mxCreateStructMatrix(1, 1, 4, fieldsSensors);
             fillSensors(plhs[0], sensors);

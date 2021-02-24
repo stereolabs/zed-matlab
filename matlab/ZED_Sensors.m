@@ -61,7 +61,8 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
             
             % Magnetometer
             if(sensors_data.MagnetometerData.is_available)
-                mag_field = sensors_data.MagnetometerData.magnetic_field_uncalibrated
+                mag_field_uncalib = sensors_data.MagnetometerData.magnetic_field_uncalibrated
+                mag_field = sensors_data.MagnetometerData.magnetic_field_calibrated
                 mag_rate = sensors_data.MagnetometerData.effective_rate
             end
 
