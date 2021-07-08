@@ -29,6 +29,7 @@
 
 // global var.
 static sl::Camera *zedCam = nullptr;
+sl::SpatialMappingParameters sp_p;
 
 const int BUFF_SIZE = 256;
 
@@ -96,6 +97,8 @@ mxArray* CvMat_to_new_mxArr(cv::Mat &matrix) {
     const int TYPE = matrix.type();
     if(CV_32FC1 == TYPE)
         return floatmat_to_mat<CV_32FC1>(matrix);
+    else if (CV_16UC1 == TYPE)
+        return floatmat_to_mat<CV_16UC1>(matrix);
     else if((CV_8UC3 == TYPE) || (CV_8UC1 == TYPE))
         return rgbimage_to_mat<IPL_DEPTH_8U>(matrix);
     return mxCreateDoubleMatrix(0, 0, mxREAL);
@@ -920,7 +923,73 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             err = depth.write(save_path);
             plhs[0] = mxCreateString(sl::toString(err).c_str());
         }
-    } 
+    }
+    else if (!strcmp(command, "enableSpatialMapping")) {
+        if (checkZED()) {
+            if (nrhs == 2) {
+                auto arg = prhs[1];
+                // check if we have a parameter structure
+                if (mxIsStruct(arg)) {
+                    // for all fields of parameter structure overwrite parameters
+                    for (int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                        const char* field_name = mxGetFieldNameByNumber(arg, i);
+                        mxArray* field_val = mxGetFieldByNumber(arg, 0, i);
+                        getValue(field_name, "map_type", field_val, sp_p.map_type);
+                        getValue(field_name, "max_memory_usage", field_val, sp_p.max_memory_usage);
+                        getValue(field_name, "range_meter", field_val, sp_p.range_meter);
+                        getValue(field_name, "resolution_meter", field_val, sp_p.resolution_meter);
+                    }
+                }
+            }
+            err = zedCam->enableSpatialMapping(sp_p);
+        }
+    }
+    else if (!strcmp(command, "extractWholeSpatialMap")) {
+        if (checkZED()) {
+            if (sp_p.map_type == sl::SpatialMappingParameters::SPATIAL_MAP_TYPE::MESH) {
+                sl::Mesh mesh;
+                err = zedCam->extractWholeSpatialMap(mesh);
+                if (err == sl::ERROR_CODE::SUCCESS) {
+                    cv::Mat vert(mesh.vertices.size(), 3, CV_32FC1);
+                    for (int i = 0; i < vert.rows; i++) {
+                        auto v = mesh.vertices[i];
+                        vert.at<float>(i, 0) = v.x;
+                        vert.at<float>(i, 1) = v.y;
+                        vert.at<float>(i, 2) = v.z;
+                    }
+                    cv::Mat faces(mesh.triangles.size(), 3, CV_16UC1);
+                    for (int i = 0; i < faces.rows; i++) {
+                        auto f = mesh.triangles[i];
+                        faces.at<ushort>(i, 0) = f.x;
+                        faces.at<ushort>(i, 1) = f.y;
+                        faces.at<ushort>(i, 2) = f.z;
+                    }
+                    plhs[0] = CvMat_to_new_mxArr(vert);
+                    plhs[1] = CvMat_to_new_mxArr(faces);
+                }
+            }
+            else{
+                sl::FusedPointCloud fpc;
+                err = zedCam->extractWholeSpatialMap(fpc);
+                if (err == sl::ERROR_CODE::SUCCESS) {
+                    cv::Mat vert(fpc.vertices.size(), 3, CV_32FC1);
+                    cv::Mat clrs(fpc.vertices.size(), 1, CV_8UC3);
+                    for (int i = 0; i < vert.rows; i++) {
+                        auto v = fpc.vertices[i];
+                        vert.at<float>(i, 0) = v.x;
+                        vert.at<float>(i, 1) = v.y;
+                        vert.at<float>(i, 2) = v.z;
+                        // depack the color
+                        uint32_t color_uint = *(uint32_t*)&v.w;
+                        auto color_uchar = (uchar*)&color_uint;
+                        clrs.at<cv::Vec3b>(i, 0) = cv::Vec3b(color_uchar[0], color_uchar[1], color_uchar[2]);
+                    }
+                    plhs[0] = CvMat_to_new_mxArr(vert);
+                    plhs[1] = CvMat_to_new_mxArr(clrs);
+                }
+            }
+        }
+    }
     else {
         std::string undefined_fct("ZED SDK MEX does not contains specified function: " + std::string(command));
 		mexWarnMsgTxt(undefined_fct.c_str());
