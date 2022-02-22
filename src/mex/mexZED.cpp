@@ -347,8 +347,9 @@ void fillSensors(mxArray* pArray, sl::SensorsData& data) {
 template <typename T>
 inline void getValue(std::string ref, std::string curr, mxArray* v_in, T& output) {
    if(ref == curr) {
-        if(mxIsNumeric(v_in)){
-            output = static_cast<T>( mxGetPr(v_in)[0]);
+        if(mxIsNumeric(v_in)) {
+            int output_ID = mxGetPr(v_in)[0];
+            output = static_cast<T>(output_ID);
             //mexPrintf("Set %s\n", curr.c_str());
         }
         else

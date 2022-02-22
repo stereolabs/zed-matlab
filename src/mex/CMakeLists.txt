@@ -1,10 +1,8 @@
 set(TARGET mexZED)
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
-SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+	SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
-
-
 
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${ZED_INCLUDE_DIRS})
@@ -17,8 +15,6 @@ link_directories(${CUDA_LIBRARY_DIRS})
 
 INCLUDE_DIRECTORIES(${MATLAB_INCLUDE_DIR})
 add_library(${TARGET} SHARED mexZED.cpp ${CMAKE_SOURCE_DIR}/Matlabdef.def)
-
-add_definitions(-std=c++0x)
 
 target_link_libraries(${TARGET}
 					${MATLAB_LIBRARIES}
