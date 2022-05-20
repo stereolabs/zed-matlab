@@ -734,9 +734,11 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             }
 
             sl::Pose path;          
-            zedCam->getPosition(path,ref_f);
+            auto state = zedCam->getPosition(path,ref_f);
             auto position = cvtMat(path.pose_data);
             plhs[0] = CvMat_to_new_mxArr(position);
+            plhs[1] = mxCreateString(sl::toString(state).c_str());
+
             err = sl::ERROR_CODE::SUCCESS;
         }
     }

@@ -54,7 +54,7 @@ if(strcmp(result,'SUCCESS'))
             imshow(image_left);
 
             % retrieve camera Path
-            position = mexZED('getPosition');
+            [position, state] = mexZED('getPosition');
             %stack positions
             PositionArray = [PositionArray; position(1,4) position(2,4) position(3,4)];
 
