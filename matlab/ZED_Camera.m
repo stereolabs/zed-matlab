@@ -8,10 +8,10 @@ clear mex; clear functions; clear all;
 % values as enum number, defines in : sl/defines.hpp
 % or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
-InitParameters.camera_resolution = 2; %HD720
+InitParameters.camera_resolution = 6; %AUTO
 InitParameters.camera_fps = 60;
 InitParameters.coordinate_units = 2; %METER
-InitParameters.depth_mode = 1; %PERFORMANCE
+InitParameters.depth_mode = 3; %ULTRA
 %InitParameters.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback
 InitParameters.depth_maximum_distance = 7;% Define maximum depth (in METER)
 result = mexZED('open', InitParameters);

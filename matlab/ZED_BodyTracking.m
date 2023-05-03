@@ -1,6 +1,6 @@
 clc;
 disp('========= ZED SDK PLUGIN =========');
-disp('-- Object Detection --');
+disp('-- Body Tracking --');
 close all;
 clear mex; clear functions; clear all;
 
@@ -21,10 +21,13 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
         
         mexZED('enablePositionalTracking');
         
-        ObjectDetectionParameters.detection_model = 0; % MULTI_CLASS_BOX_FAST
-        ObjectDetectionParameters.enable_tracking = 1; % enable Object tracking
-        mexZED('enableObjectDetection', ObjectDetectionParameters);        
-        ObjectDetectionRuntimeParameters.detection_confidence_threshold = 35
+        BodyTrackingParameters.detection_model = 0; % HUMAN_BODY_FAST
+        BodyTrackingParameters.body_format = 2; % BODY_38        
+        BodyTrackingParameters.enable_tracking = 1; % enable tracking
+        BodyTrackingParameters.enable_body_fitting = 1; %enable fiting 
+        mexZED('enableBodyTracking', BodyTrackingParameters);
+        BodyTrackingRuntimeParameters.detection_confidence_threshold = 50;
+        BodyTrackingRuntimeParameters.minimum_keypoints_threshold = 5;
         
         % Create Figure and wait for keyboard interruption to quit
         f = figure('name','ZED SDK: Detection','NumberTitle','off', 'keypressfcn',@(obj,evt) 0);
@@ -41,18 +44,29 @@ if(strcmp(result,'SUCCESS')) % the Camera is open
                 % retrieve letf image
                 image_left = mexZED('retrieveImage', 0, display_size(1), display_size(2)); %left
                 
-                objs = mexZED('retrieveObjects', ObjectDetectionRuntimeParameters);
+                bodies = mexZED('retrieveBodies', BodyTrackingRuntimeParameters);
                 
                 % display
                 imshow(image_left);
                 
-                for o = 1: length(objs.object_list)
-                    bb2d = objs.object_list(o).bounding_box_2d;
-                    clr = clrs(mod(max(0, objs.object_list(o).id), 6)+1, :);
+                for b = 1: length(bodies.body_list)
+                    
+                    clr = clrs(mod(max(0, bodies.body_list(b).id), 6)+1, :);
+                    
+                    keypoints2d =  bodies.body_list(b).keypoint_2d;
+                    for kp = 1: length(keypoints2d)
+                        kp2d = keypoints2d(kp);
+                        if(kp2d.u >= 0) % discard undetected keypoints
+                            rectangle('Position', [(kp2d.u * ratio(1) - 2), (kp2d.v * ratio(2) - 2), 4, 4]...
+                                ,'Curvature',[1,1], 'LineWidth',3, 'EdgeColor', clr);
+                        end
+                    end
+                    
+                    bb2d = bodies.body_list(b).bounding_box_2d;
                     rectangle('Position', [bb2d(1).u * ratio(1), bb2d(1).v * ratio(2), (bb2d(3).u - bb2d(1).u) * ratio(1), (bb2d(3).v - bb2d(1).v) * ratio(2)]...
                         ,'Curvature',0.05, 'LineWidth',3, 'EdgeColor', clr);
                     
-                    ['Id: ' num2str(objs.object_list(o).id) ' Conf: ', num2str(objs.object_list(o).confidence)]
+                    ['Id: ' num2str(bodies.body_list(b).id) ' Conf: ', num2str(bodies.body_list(b).confidence)]
                 end
                 
                 drawnow;  %this checks for interrupts  

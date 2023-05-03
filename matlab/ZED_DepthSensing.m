@@ -8,7 +8,7 @@ clear mex; clear functions; clear all;
 % values as enum number, defines qin : sl/defines.hpp
 % or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
-InitParameters.camera_resolution = 2; %HD720
+InitParameters.camera_resolution = 6; %AUTO
 InitParameters.coordinate_units = 2; %METER
 InitParameters.depth_mode = 3; %ULTRA
 %InitParameters.svo_input_filename = '../mySVOfile.svo'; % Enable SVO playback

@@ -8,7 +8,7 @@ clear mex; clear functions; clear all;
 % values as enum number, defines in : sl/defines.hpp
 % or from https://www.stereolabs.com/docs/api/structsl_1_1InitParameters.html
 
-InitParameters.camera_resolution = 0; %HD2K
+InitParameters.camera_resolution = 6; %AUTO
 InitParameters.depth_mode = 0; % No depth required
 result = mexZED('open', InitParameters);
 

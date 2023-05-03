@@ -171,7 +171,7 @@ void fillCameraParam(mxArray *pArray, sl::CameraParameters &param) {
 
 const char* point3D[] = { "x", "y", "z"};
 const char* point2D[] = { "u", "v"};
-const char* fieldsObjectData[] = { "id", "label", "tracking_state", "action_state", "confidence", "position", "velocity", "bounding_box_2d", "bounding_box_3d", "keypoint_2d", "keypoint"};
+const char* fieldsObjectData[] = { "id", "label", "tracking_state", "action_state", "confidence", "position", "velocity", "bounding_box_2d", "bounding_box_3d"};
 void fillObjectData(mxArray* pArray, sl::ObjectData& obj, int idx) {
 
     mxSetField(pArray, idx, fieldsObjectData[0], mxCreateDoubleScalar(static_cast<double>(obj.id)));
@@ -206,23 +206,6 @@ void fillObjectData(mxArray* pArray, sl::ObjectData& obj, int idx) {
         mxSetField(bounding_box, i, "z", mxCreateDoubleScalar(obj.bounding_box[i].z));
     }
     mxSetField(pArray, idx, fieldsObjectData[8], bounding_box);
-
-    
-    mxArray* keypoint_2d = mxCreateStructMatrix(1, obj.keypoint_2d.size(), 2, point2D);
-    for (int i = 0; i < obj.keypoint_2d.size(); i++){
-        mxSetField(keypoint_2d, i, "u", mxCreateDoubleScalar(obj.keypoint_2d[i].x));
-        mxSetField(keypoint_2d, i, "v", mxCreateDoubleScalar(obj.keypoint_2d[i].y));
-    }
-    mxSetField(pArray, idx, fieldsObjectData[9], keypoint_2d);
-
-    mxArray* keypoint = mxCreateStructMatrix(1, obj.keypoint.size(), 3, point3D);
-    for (int i = 0; i < obj.keypoint.size(); i++) {
-        mxSetField(keypoint, i, "x", mxCreateDoubleScalar(obj.keypoint[i].x));
-        mxSetField(keypoint, i, "y", mxCreateDoubleScalar(obj.keypoint[i].y));
-        mxSetField(keypoint, i, "z", mxCreateDoubleScalar(obj.keypoint[i].z));
-    }
-    mxSetField(pArray, idx, fieldsObjectData[10], keypoint);
-
 }
 
 const char* fieldsObject[] = { "time_stamp", "is_new", "is_tracked", "object_list" };
@@ -231,10 +214,74 @@ void fillObjects(mxArray* pArray, sl::Objects& objs) {
     mxSetField(pArray, 0, fieldsObject[1], mxCreateDoubleScalar(static_cast<double>(objs.is_new)));
     mxSetField(pArray, 0, fieldsObject[2], mxCreateDoubleScalar(static_cast<double>(objs.is_tracked)));
 
-    mxArray* obj = mxCreateStructMatrix(1, objs.object_list.size(), 11, fieldsObjectData);
+    mxArray* obj = mxCreateStructMatrix(1, objs.object_list.size(), 9, fieldsObjectData);
     for (int i = 0; i < objs.object_list.size(); i++)
         fillObjectData(obj, objs.object_list[i], i);    
     mxSetField(pArray, 0, fieldsObject[3], obj);
+}
+
+const char* fieldsBodyData[] = { "id", "tracking_state", "action_state", "confidence", "position", "velocity", "bounding_box_2d", "bounding_box_3d", "keypoint_2d", "keypoint" };
+void fillBodyData(mxArray* pArray, sl::BodyData& body, int idx) {
+
+    mxSetField(pArray, idx, fieldsBodyData[0], mxCreateDoubleScalar(static_cast<double>(body.id)));
+    mxSetField(pArray, idx, fieldsBodyData[1], mxCreateDoubleScalar(static_cast<double>(body.tracking_state)));
+    mxSetField(pArray, idx, fieldsBodyData[2], mxCreateDoubleScalar(static_cast<double>(body.action_state)));
+    mxSetField(pArray, idx, fieldsBodyData[3], mxCreateDoubleScalar(static_cast<double>(body.confidence)));
+
+    mxArray* position = mxCreateStructMatrix(1, 1, 3, point3D);
+    mxSetField(position, 0, "x", mxCreateDoubleScalar(body.position.x));
+    mxSetField(position, 0, "y", mxCreateDoubleScalar(body.position.y));
+    mxSetField(position, 0, "z", mxCreateDoubleScalar(body.position.z));
+    mxSetField(pArray, idx, fieldsBodyData[4], position);
+
+    mxArray* velocity = mxCreateStructMatrix(1, 1, 3, point3D);
+    mxSetField(velocity, 0, "x", mxCreateDoubleScalar(body.velocity.x));
+    mxSetField(velocity, 0, "y", mxCreateDoubleScalar(body.velocity.y));
+    mxSetField(velocity, 0, "z", mxCreateDoubleScalar(body.velocity.z));
+    mxSetField(pArray, idx, fieldsBodyData[5], velocity);
+
+    mxArray* bounding_box_2d = mxCreateStructMatrix(1, body.bounding_box_2d.size(), 2, point2D);
+    for (int i = 0; i < body.bounding_box_2d.size(); i++) {
+        mxSetField(bounding_box_2d, i, "u", mxCreateDoubleScalar(body.bounding_box_2d[i].x));
+        mxSetField(bounding_box_2d, i, "v", mxCreateDoubleScalar(body.bounding_box_2d[i].y));
+    }
+    mxSetField(pArray, idx, fieldsBodyData[6], bounding_box_2d);
+
+    mxArray* bounding_box = mxCreateStructMatrix(1, body.bounding_box.size(), 3, point3D);
+    for (int i = 0; i < body.bounding_box.size(); i++) {
+        mxSetField(bounding_box, i, "x", mxCreateDoubleScalar(body.bounding_box[i].x));
+        mxSetField(bounding_box, i, "y", mxCreateDoubleScalar(body.bounding_box[i].y));
+        mxSetField(bounding_box, i, "z", mxCreateDoubleScalar(body.bounding_box[i].z));
+    }
+    mxSetField(pArray, idx, fieldsBodyData[7], bounding_box);
+
+    mxArray* keypoint_2d = mxCreateStructMatrix(1, body.keypoint_2d.size(), 2, point2D);
+    for (int i = 0; i < body.keypoint_2d.size(); i++) {
+        mxSetField(keypoint_2d, i, "u", mxCreateDoubleScalar(body.keypoint_2d[i].x));
+        mxSetField(keypoint_2d, i, "v", mxCreateDoubleScalar(body.keypoint_2d[i].y));
+    }
+    mxSetField(pArray, idx, fieldsBodyData[8], keypoint_2d);
+
+    mxArray* keypoint = mxCreateStructMatrix(1, body.keypoint.size(), 3, point3D);
+    for (int i = 0; i < body.keypoint.size(); i++) {
+        mxSetField(keypoint, i, "x", mxCreateDoubleScalar(body.keypoint[i].x));
+        mxSetField(keypoint, i, "y", mxCreateDoubleScalar(body.keypoint[i].y));
+        mxSetField(keypoint, i, "z", mxCreateDoubleScalar(body.keypoint[i].z));
+    }
+    mxSetField(pArray, idx, fieldsBodyData[9], keypoint);
+}
+
+const char* fieldsBodies[] = { "time_stamp", "is_new", "is_tracked", "body_format", "body_list"};
+void fillBodies(mxArray* pArray, sl::Bodies& bodies) {
+    mxSetField(pArray, 0, fieldsBodies[0], mxCreateDoubleScalar(static_cast<double>(bodies.timestamp.getMilliseconds())));
+    mxSetField(pArray, 0, fieldsBodies[1], mxCreateDoubleScalar(static_cast<double>(bodies.is_new)));
+    mxSetField(pArray, 0, fieldsBodies[2], mxCreateDoubleScalar(static_cast<double>(bodies.is_tracked)));
+    mxSetField(pArray, 0, fieldsBodies[3], mxCreateDoubleScalar(static_cast<double>(bodies.body_format)));
+
+    mxArray* obj = mxCreateStructMatrix(1, bodies.body_list.size(), 10, fieldsBodyData);
+    for (int i = 0; i < bodies.body_list.size(); i++)
+        fillBodyData(obj, bodies.body_list[i], i);
+    mxSetField(pArray, 0, fieldsBodies[4], obj);
 }
 
 const char* fieldsTemp[] = {"IMU", "BAROMETER", "ONBOARD_LEFT", "ONBOARD_RIGHT" };
@@ -434,7 +481,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
 					const char *field_name = mxGetFieldNameByNumber(prhs[1], i);
 					mxArray *field_val = mxGetFieldByNumber(prhs[1], 0, i);
                     
-                    getValue(field_name, "sensing_mode", field_val, param.sensing_mode);
+                    getValue(field_name, "confidence_threshold", field_val, param.confidence_threshold);
+                    getValue(field_name, "enable_fill_mode", field_val, param.enable_fill_mode);
+                    getValue(field_name, "remove_saturated_areas", field_val, param.remove_saturated_areas);
+                    getValue(field_name, "texture_confidence_threshold", field_val, param.texture_confidence_threshold);
                     getValue(field_name, "enable_depth", field_val, param.enable_depth);
                     getValue(field_name, "measure3D_reference_frame", field_val, param.measure3D_reference_frame);
 				}
@@ -613,23 +663,23 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                 plhs[0] = mxCreateDoubleMatrix(1, 4, mxREAL);
                 memcpy(mxGetPr(plhs[0]), &val, 4 * sizeof(double));
             } else {
-                double val = 0;
+                int val = 0;
                 if (!strcmp(settingName, "brightness"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::BRIGHTNESS, val);
                 else if (!strcmp(settingName, "contrast"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::CONTRAST);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::CONTRAST, val);
                 else if (!strcmp(settingName, "hue"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::HUE);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::HUE, val);
                 else if (!strcmp(settingName, "saturation"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::SATURATION);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::SATURATION, val);
                 else if (!strcmp(settingName, "gain"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::GAIN);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::GAIN, val);
                 else if (!strcmp(settingName, "exposure"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::EXPOSURE, val);
                 else if (!strcmp(settingName, "aec_agc"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::AEC_AGC, val);
                 else if (!strcmp(settingName, "whitebalance"))
-                    val = zedCam->getCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE);
+                    zedCam->getCameraSettings(sl::VIDEO_SETTINGS::WHITEBALANCE_TEMPERATURE, val);
                 else
                     mexWarnMsgTxt("Unknown VIDEO SETTINGS");
 
@@ -668,21 +718,22 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             pRight = mxCreateStructMatrix(1, 1, 10, fieldsIntra);
 
             mxSetField(plhs[0], 0, fieldsParameters[0], mxCreateDoubleScalar(camInfo.serial_number));
-            mxSetField(plhs[0], 0, fieldsParameters[1], mxCreateDoubleScalar(camInfo.camera_firmware_version));
+            mxSetField(plhs[0], 0, fieldsParameters[1], mxCreateDoubleScalar(camInfo.camera_configuration.firmware_version));
 
+            auto calibration_parameters = camInfo.camera_configuration.calibration_parameters;
             const mxClassID cid = cvm_traits<CV_32FC1>::CID;
             mxArray* rotation = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(rotation), &(camInfo.calibration_parameters.R), sizeof(camInfo.calibration_parameters.R));
+            memcpy(mxGetPr(rotation), &(calibration_parameters.stereo_transform.getRotationVector()), sizeof(sl::float3));
             mxSetField(plhs[0], 0, fieldsParameters[2], rotation);
 
             mxArray* translation = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(translation), &(camInfo.calibration_parameters.T), sizeof(camInfo.calibration_parameters.T));
+            memcpy(mxGetPr(translation), &(calibration_parameters.stereo_transform.getTranslation()), sizeof(sl::float3));
             mxSetField(plhs[0], 0, fieldsParameters[3], translation);
 
-            fillCameraParam(pLeft, camInfo.calibration_parameters.left_cam);
+            fillCameraParam(pLeft, calibration_parameters.left_cam);
             mxSetField(plhs[0], 0, fieldsParameters[4], pLeft);
 
-            fillCameraParam(pRight, camInfo.calibration_parameters.right_cam);
+            fillCameraParam(pRight, calibration_parameters.right_cam);
             mxSetField(plhs[0], 0, fieldsParameters[5], pRight);
 
             mxSetField(plhs[0], 0, fieldsParameters[6], mxCreateDoubleScalar(static_cast<int>(camInfo.camera_model)));
@@ -826,8 +877,9 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
                         const char *field_name = mxGetFieldNameByNumber(arg, i);
                         mxArray *field_val = mxGetFieldByNumber(arg, 0, i);
                         getValue(field_name, "detection_model", field_val, param.detection_model);
-                        getValue(field_name, "enable_body_fitting", field_val, param.enable_body_fitting);
-                        getValue(field_name, "enable_mask_output", field_val, param.enable_mask_output);
+                        getValue(field_name, "filtering_mode", field_val, param.filtering_mode);
+                        getValue(field_name, "max_range", field_val, param.max_range);
+                        getValue(field_name, "enable_mask_output", field_val, param.enable_segmentation);
                         getValue(field_name, "enable_tracking", field_val, param.enable_tracking);
                     }
                 }
@@ -867,6 +919,64 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
         }
     }
 
+    else if (!strcmp(command, "enableBodyTracking")) {
+        if (checkZED()) {
+            sl::BodyTrackingParameters param;
+            if (nrhs == 2) {
+                auto arg = prhs[1];
+                // check if we have a parameter structure            
+                if (mxIsStruct(arg)) {
+                    // for all fields of parameter structure overwrite parameters
+                    for (int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                        const char* field_name = mxGetFieldNameByNumber(arg, i);
+                        mxArray* field_val = mxGetFieldByNumber(arg, 0, i);
+                        getValue(field_name, "detection_model", field_val, param.detection_model);
+                        getValue(field_name, "body_format", field_val, param.body_format);
+                        getValue(field_name, "enable_tracking", field_val, param.enable_tracking);
+                        getValue(field_name, "enable_body_fitting", field_val, param.enable_body_fitting);
+                        getValue(field_name, "enable_segmentation", field_val, param.enable_segmentation);
+                        getValue(field_name, "instance_module_id", field_val, param.instance_module_id);
+                    }
+                }
+            }
+            err = zedCam->enableBodyTracking(param);
+        }
+        }
+
+    else if (!strcmp(command, "retrieveBodies")) {
+            if (checkZED()) {
+                sl::BodyTrackingRuntimeParameters param;
+                unsigned int instance_id = 0;
+                if (nrhs == 2) {
+                    auto arg = prhs[1];
+                    // check if we have a parameter structure            
+                    if (mxIsStruct(arg)) {
+                        // for all fields of parameter structure overwrite parameters
+                        for (int32_t i = 0; i < mxGetNumberOfFields(arg); i++) {
+                            const char* field_name = mxGetFieldNameByNumber(arg, i);
+                            auto field_val = mxGetFieldByNumber(arg, 0, i);
+                            getValue(field_name, "detection_confidence_threshold", field_val, param.detection_confidence_threshold);
+                            getValue(field_name, "minimum_keypoints_threshold", field_val, param.minimum_keypoints_threshold);
+                            getValue(field_name, "instance_id", field_val, instance_id);
+                        }
+                    }
+                    else
+                        param.detection_confidence_threshold = static_cast<float>(mxGetPr(arg)[0]);
+                }
+
+                sl::Bodies bodies;
+                err = zedCam->retrieveBodies(bodies, param, instance_id);
+                plhs[0] = mxCreateStructMatrix(1, 1, 5, fieldsBodies);
+                fillBodies(plhs[0], bodies);
+            }
+            }
+
+    else if (!strcmp(command, "disableBodyTracking")) {
+                if (checkZED()) {
+                    zedCam->disableBodyTracking();
+                    err = sl::ERROR_CODE::SUCCESS;
+                }
+                }
     else if(!strcmp(command, "getSDKVersion")) {
         if(checkParams(nrhs, 0)) {
             const char* version = sl::Camera::getSDKVersion();
