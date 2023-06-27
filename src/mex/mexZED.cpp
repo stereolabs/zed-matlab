@@ -448,7 +448,8 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             }
         }
         err = zedCam->open(initParams);
-        
+
+        std::cout << "VERBOSE " << initParams.sdk_verbose << std::endl;
         // we return the string associated with the error
         plhs[0] = mxCreateString(sl::toString(err).c_str());
     }
@@ -723,11 +724,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]) {
             auto calibration_parameters = camInfo.camera_configuration.calibration_parameters;
             const mxClassID cid = cvm_traits<CV_32FC1>::CID;
             mxArray* rotation = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(rotation), &(calibration_parameters.stereo_transform.getRotationVector()), sizeof(sl::float3));
+            auto rotation_vec = calibration_parameters.stereo_transform.getRotationVector();
+            memcpy(mxGetPr(rotation), &rotation_vec, sizeof(sl::float3));
             mxSetField(plhs[0], 0, fieldsParameters[2], rotation);
 
             mxArray* translation = mxCreateNumericMatrix(1, 3, cid, mxREAL);
-            memcpy(mxGetPr(translation), &(calibration_parameters.stereo_transform.getTranslation()), sizeof(sl::float3));
+            auto translation_vec = calibration_parameters.stereo_transform.getTranslation();
+            memcpy(mxGetPr(translation), &translation_vec, sizeof(sl::float3));
             mxSetField(plhs[0], 0, fieldsParameters[3], translation);
 
             fillCameraParam(pLeft, calibration_parameters.left_cam);
