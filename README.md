@@ -18,7 +18,7 @@ This sample shows how to use the ZED SDK functionalities  within Matlab.
 
 #### Build for Windows
 
-For detailed installation instructions, check out our [documentation](https://www.stereolabs.com/documentation/integrations/matlab/getting-started.html).
+For detailed installation instructions, check out our [documentation](https://www.stereolabs.com/docs/matlab#using-the-zed-sdk).
 
 #### Build for Linux
 
